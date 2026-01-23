@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Exclude sensitive data from cloud backup -->
+        <exclude domain="sharedpref" path="opensheets_secure_prefs.xml" />
+        <exclude domain="database" path="opensheets_companion.db" />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Allow transfer during device migration -->
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="opensheets_secure_prefs.xml" />
+    </device-transfer>
+</data-extraction-rules>

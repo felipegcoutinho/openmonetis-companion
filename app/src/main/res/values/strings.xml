@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OpenSheets Companion</string>
+
+    <!-- Setup -->
+    <string name="setup_server_title">Configurar Servidor</string>
+    <string name="setup_server_description">Insira a URL do seu servidor OpenSheets</string>
+    <string name="setup_server_url_label">URL do servidor</string>
+    <string name="setup_server_url_placeholder">https://opensheets.exemplo.com</string>
+    <string name="setup_verify_connection">Verificar Conexão</string>
+    <string name="setup_token_title">Autenticação</string>
+    <string name="setup_token_description">Cole o token de API gerado no OpenSheets</string>
+    <string name="setup_token_label">Token de API</string>
+    <string name="setup_token_placeholder">os_xxxxxxxxxxxx</string>
+    <string name="setup_scan_qr">Escanear QR Code</string>
+    <string name="setup_connect">Conectar</string>
+
+    <!-- Home -->
+    <string name="home_title">Início</string>
+    <string name="home_pending_notifications">Notificações Pendentes</string>
+    <string name="home_synced_today">Sincronizadas Hoje</string>
+    <string name="home_last_sync">Última sincronização</string>
+    <string name="home_never_synced">Nunca sincronizado</string>
+
+    <!-- History -->
+    <string name="history_title">Histórico</string>
+    <string name="history_empty">Nenhuma notificação capturada</string>
+    <string name="history_filter_all">Todos</string>
+    <string name="history_filter_pending">Pendentes</string>
+    <string name="history_filter_synced">Sincronizados</string>
+    <string name="history_filter_failed">Falha</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Configurações</string>
+    <string name="settings_server">Servidor</string>
+    <string name="settings_server_url">URL</string>
+    <string name="settings_server_status">Status</string>
+    <string name="settings_server_connected">Conectado</string>
+    <string name="settings_server_disconnected">Desconectado</string>
+    <string name="settings_change_server">Alterar Servidor</string>
+    <string name="settings_token">Token</string>
+    <string name="settings_token_name">Nome</string>
+    <string name="settings_token_created">Criado em</string>
+    <string name="settings_disconnect">Desconectar</string>
+    <string name="settings_monitored_apps">Apps Monitorados</string>
+    <string name="settings_manage_apps">Gerenciar Apps</string>
+    <string name="settings_notification_permission">Permissão de Notificações</string>
+    <string name="settings_grant_permission">Conceder Permissão</string>
+    <string name="settings_permission_granted">Permissão concedida</string>
+    <string name="settings_about">Sobre</string>
+    <string name="settings_version">Versão</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="save">Salvar</string>
+    <string name="delete">Excluir</string>
+    <string name="error">Erro</string>
+    <string name="success">Sucesso</string>
+    <string name="loading">Carregando…</string>
+    <string name="retry">Tentar novamente</string>
+
+    <!-- Errors -->
+    <string name="error_connection_failed">Não foi possível conectar ao servidor</string>
+    <string name="error_invalid_url">URL inválida</string>
+    <string name="error_invalid_token">Token inválido ou expirado</string>
+    <string name="error_network">Erro de conexão</string>
+    <string name="error_unknown">Erro desconhecido</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_sync">Sincronização</string>
+    <string name="notification_channel_sync_description">Notificações de sincronização</string>
+    <string name="notification_sync_success">%d notificações sincronizadas</string>
+    <string name="notification_sync_failed">Falha na sincronização</string>
+</resources>
