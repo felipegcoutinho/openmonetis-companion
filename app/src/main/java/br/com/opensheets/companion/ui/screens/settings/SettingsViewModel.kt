@@ -144,11 +144,11 @@ class SettingsViewModel @Inject constructor(
                 
                 pm.getInstalledApplications(PackageManager.GET_META_DATA)
                     .filter { appInfo ->
-                        // Only show apps with a launcher icon (user-facing apps)
-                        pm.getLaunchIntentForPackage(appInfo.packageName) != null &&
                         // Exclude already monitored apps
                         appInfo.packageName !in monitoredPackages &&
-                        // Exclude system apps without updates
+                        // Exclude our own app
+                        appInfo.packageName != context.packageName &&
+                        // Show user apps OR updated system apps (like banking apps)
                         (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0 ||
                          appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP != 0)
                     }
