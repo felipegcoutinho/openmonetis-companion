@@ -1,36 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!-- Background circle -->
-    <path
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0"
-        android:fillColor="#16A34A" />
-
-    <!-- Document/Sheet icon -->
-    <path
-        android:pathData="M42,30h16l10,10v28c0,2.2 -1.8,4 -4,4H42c-2.2,0 -4,-1.8 -4,-4V34c0,-2.2 1.8,-4 4,-4z"
-        android:fillColor="#FFFFFF" />
-
-    <!-- Folded corner -->
-    <path
-        android:pathData="M58,30l10,10h-8c-1.1,0 -2,-0.9 -2,-2V30z"
-        android:fillColor="#E5E7EB" />
-
-    <!-- Lines representing data -->
-    <path
-        android:pathData="M44,48h20"
-        android:strokeWidth="2"
-        android:strokeColor="#16A34A" />
-    <path
-        android:pathData="M44,54h20"
-        android:strokeWidth="2"
-        android:strokeColor="#16A34A" />
-    <path
-        android:pathData="M44,60h14"
-        android:strokeWidth="2"
-        android:strokeColor="#16A34A" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/opensheets_logo"
+        android:gravity="center"
+        android:width="66dp"
+        android:height="66dp" />
+</layer-list>

@@ -36,11 +36,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.opensheets.companion.data.local.entities.SyncLogType
+import br.com.opensheets.companion.ui.theme.Success
+import br.com.opensheets.companion.ui.theme.Warning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,8 +131,8 @@ private fun LogCard(log: LogUiItem) {
     val (icon, iconTint, containerColor) = when (log.type) {
         SyncLogType.SUCCESS -> Triple(
             Icons.Default.CheckCircle,
-            Color(0xFF4CAF50),
-            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+            Success,
+            Success.copy(alpha = 0.1f)
         )
         SyncLogType.ERROR -> Triple(
             Icons.Default.Error,
@@ -140,8 +141,8 @@ private fun LogCard(log: LogUiItem) {
         )
         SyncLogType.WARNING -> Triple(
             Icons.Default.Warning,
-            Color(0xFFFFA000),
-            Color(0xFFFFA000).copy(alpha = 0.1f)
+            Warning,
+            Warning.copy(alpha = 0.1f)
         )
         SyncLogType.INFO -> Triple(
             Icons.Default.Info,
