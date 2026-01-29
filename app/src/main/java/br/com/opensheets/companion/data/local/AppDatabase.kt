@@ -81,7 +81,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Remove expense/income keywords columns and parsed_transaction_type
+                // Remove expense/income keywords columns from keywords_settings
                 // SQLite doesn't support DROP COLUMN directly, recreate table
                 db.execSQL("""
                     CREATE TABLE keywords_settings_new (
@@ -97,30 +97,33 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE keywords_settings_new RENAME TO keywords_settings")
 
                 // Remove parsed_transaction_type from notifications
+                // The table already uses correct column names (source_app, original_text, etc.)
                 db.execSQL("""
                     CREATE TABLE notifications_new (
                         id TEXT PRIMARY KEY NOT NULL,
-                        package_name TEXT NOT NULL,
-                        app_name TEXT NOT NULL,
-                        title TEXT,
-                        text TEXT NOT NULL,
+                        source_app TEXT NOT NULL,
+                        source_app_name TEXT,
+                        original_title TEXT,
+                        original_text TEXT NOT NULL,
                         notification_timestamp INTEGER NOT NULL,
-                        capture_timestamp INTEGER NOT NULL,
+                        parsed_name TEXT,
                         parsed_amount REAL,
-                        parsed_merchant_name TEXT,
+                        parsed_date INTEGER,
                         parsed_card_last_digits TEXT,
                         sync_status TEXT NOT NULL,
-                        sync_timestamp INTEGER,
-                        sync_error TEXT
+                        server_item_id TEXT,
+                        sync_error TEXT,
+                        created_at INTEGER NOT NULL
                     )
                 """.trimIndent())
                 db.execSQL("""
-                    INSERT INTO notifications_new (id, package_name, app_name, title, text, 
-                        notification_timestamp, capture_timestamp, parsed_amount, parsed_merchant_name,
-                        parsed_card_last_digits, sync_status, sync_timestamp, sync_error)
-                    SELECT id, package_name, app_name, title, text, notification_timestamp, 
-                        capture_timestamp, parsed_amount, parsed_merchant_name, parsed_card_last_digits,
-                        sync_status, sync_timestamp, sync_error FROM notifications
+                    INSERT INTO notifications_new (id, source_app, source_app_name, original_title,
+                        original_text, notification_timestamp, parsed_name, parsed_amount, parsed_date,
+                        parsed_card_last_digits, sync_status, server_item_id, sync_error, created_at)
+                    SELECT id, source_app, source_app_name, original_title, original_text,
+                        notification_timestamp, parsed_name, parsed_amount, parsed_date,
+                        parsed_card_last_digits, sync_status, server_item_id, sync_error, created_at
+                    FROM notifications
                 """.trimIndent())
                 db.execSQL("DROP TABLE notifications")
                 db.execSQL("ALTER TABLE notifications_new RENAME TO notifications")
