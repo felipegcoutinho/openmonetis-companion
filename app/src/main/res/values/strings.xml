@@ -12,7 +12,6 @@
     <string name="setup_token_description">Cole o token de API gerado no OpenSheets</string>
     <string name="setup_token_label">Token de API</string>
     <string name="setup_token_placeholder">os_xxxxxxxxxxxx</string>
-    <string name="setup_scan_qr">Escanear QR Code</string>
     <string name="setup_connect">Conectar</string>
 
     <!-- Home -->

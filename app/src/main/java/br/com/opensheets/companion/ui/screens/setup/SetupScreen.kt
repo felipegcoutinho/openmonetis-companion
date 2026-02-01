@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -103,8 +101,7 @@ fun SetupScreen(
                     error = uiState.error,
                     serverName = uiState.serverName,
                     onTokenChange = viewModel::updateToken,
-                    onVerifyToken = viewModel::verifyToken,
-                    onScanQrCode = { /* TODO: QR Code scanning */ }
+                    onVerifyToken = viewModel::verifyToken
                 )
             }
         }
@@ -186,8 +183,7 @@ private fun TokenStep(
     error: String?,
     serverName: String?,
     onTokenChange: (String) -> Unit,
-    onVerifyToken: () -> Unit,
-    onScanQrCode: () -> Unit
+    onVerifyToken: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -254,17 +250,6 @@ private fun TokenStep(
             isError = error != null,
             supportingText = error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } }
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedButton(
-            onClick = onScanQrCode,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.QrCodeScanner, contentDescription = null)
-            Spacer(modifier = Modifier.size(8.dp))
-            Text(stringResource(R.string.setup_scan_qr))
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
