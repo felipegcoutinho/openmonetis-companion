@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,7 +69,13 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.home_title)) },
+                title = {
+                    Image(
+                        painter = painterResource(R.drawable.logo_small),
+                        contentDescription = stringResource(R.string.home_title),
+                        modifier = Modifier.height(32.dp)
+                    )
+                },
                 actions = {
                     IconButton(onClick = onNavigateToKeywords) {
                         Icon(Icons.Outlined.Tune, contentDescription = "Gatilhos de captura")
