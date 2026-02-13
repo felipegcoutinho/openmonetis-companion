@@ -58,18 +58,28 @@ class NotificationParser @Inject constructor() {
             " e recebeu", " e ganhou", " cashback", "\n"
         )
 
+        // Palavras que aparecem após "em/no/na" mas NÃO são estabelecimentos
+        val falsePositives = setOf(
+            "crédito", "credito", "débito", "debito", "fatura", "conta",
+            "pix", "transferência", "transferencia", "boleto"
+        )
+
         // Padrões para encontrar início do estabelecimento (em ordem de prioridade)
         val startPatterns = listOf(
-            // Padrão 1: "em/no/na [ESTABELECIMENTO]" - mais comum
-            Regex("""(?:em|no|na)\s+([A-ZÀ-Ú][A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE),
-            // Padrão 2: "pagou/comprou R$ X a [ESTABELECIMENTO]" - Mercado Pago e similares
-            Regex("""(?:pagou|comprou|gastou)\s+R\$\s*[\d.,]+\s+a\s+([A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE),
-            // Padrão 3: "comprar R$ X a [ESTABELECIMENTO]"
-            Regex("""comprar\s+R\$\s*[\d.,]+\s+(?:em|a)\s+([A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE)
+            // Padrão 1: "R$ X,XX em [ESTABELECIMENTO]" - mais confiável
+            Regex("""R\$\s*[\d.,]+\s+(?:APROVADA\s+)?(?:em|a)\s+([A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE),
+            // Padrão 2: "comprar/pagou/comprou/gastou R$ X em/a [ESTABELECIMENTO]"
+            Regex("""(?:comprar|pagou|comprou|gastou)\s+R\$\s*[\d.,]+\s+(?:em|a)\s+([A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE),
+            // Padrão 3: "em/no/na [ESTABELECIMENTO]" - fallback genérico, filtra falsos positivos
+            Regex("""(?:em|no|na)\s+([A-ZÀ-Ú][A-Za-zÀ-ú0-9\s&.*/_-]+)""", RegexOption.IGNORE_CASE)
         )
 
         for (pattern in startPatterns) {
-            val match = pattern.find(text) ?: continue
+            val matches = pattern.findAll(text)
+            val match = matches.firstOrNull { result ->
+                val firstWord = result.groupValues[1].trim().split("\\s+".toRegex()).first()
+                firstWord.lowercase() !in falsePositives
+            } ?: continue
             var merchant = match.groupValues[1]
 
             // Encontrar o delimitador de fim mais próximo
