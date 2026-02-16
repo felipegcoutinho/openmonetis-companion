@@ -110,7 +110,7 @@ Baixe a última versão do APK na página de [Releases](https://github.com/felip
 ### 2. Configurar o App
 
 1. Abra o OpenMonetis Companion
-2. Insira a URL do seu servidor (ex: `https://app.openmonetis.com`)
+2. Insira a URL do seu servidor (ex: `https://openmonetis.com`)
 3. Cole o token de API
 4. Clique em **Conectar**
 
