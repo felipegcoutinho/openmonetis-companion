@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">OpenSheets Companion</string>
+    <string name="app_name">OpenMonetis Companion</string>
 
     <!-- Setup -->
     <string name="setup_server_title">Configurar Servidor</string>
-    <string name="setup_server_description">Insira a URL do seu servidor OpenSheets</string>
+    <string name="setup_server_description">Insira a URL do seu servidor OpenMonetis</string>
     <string name="setup_server_url_label">URL do servidor</string>
-    <string name="setup_server_url_placeholder">https://opensheets.exemplo.com</string>
+    <string name="setup_server_url_placeholder">https://openmonetis.exemplo.com</string>
     <string name="setup_verify_connection">Verificar Conexão</string>
     <string name="setup_token_title">Autenticação</string>
-    <string name="setup_token_description">Cole o token de API gerado no OpenSheets</string>
+    <string name="setup_token_description">Cole o token de API gerado no OpenMonetis</string>
     <string name="setup_token_label">Token de API</string>
     <string name="setup_token_placeholder">os_xxxxxxxxxxxx</string>
     <string name="setup_connect">Conectar</string>

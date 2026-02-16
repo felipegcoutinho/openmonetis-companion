@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- OpenSheets Brand Colors - Terracotta Orange -->
+    <!-- OpenMonetis Brand Colors - Terracotta Orange -->
     <color name="primary">#E87040</color>
     <color name="primary_variant">#D45D30</color>
     <color name="secondary">#8B7355</color>

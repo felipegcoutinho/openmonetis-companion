@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "br.com.opensheets.companion"
+    namespace = "br.com.openmonetis.companion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.opensheets.companion"
+        applicationId = "br.com.openmonetis.companion"
         minSdk = 31 // Android 12
         targetSdk = 35
         versionCode = 4

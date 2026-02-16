@@ -34,6 +34,6 @@
 -keep class androidx.security.crypto.** { *; }
 
 # Keep data classes for Gson serialization
--keep class br.com.opensheets.companion.data.remote.dto.** { *; }
--keep class br.com.opensheets.companion.data.local.entities.** { *; }
--keep class br.com.opensheets.companion.domain.model.** { *; }
+-keep class br.com.openmonetis.companion.data.remote.dto.** { *; }
+-keep class br.com.openmonetis.companion.data.local.entities.** { *; }
+-keep class br.com.openmonetis.companion.domain.model.** { *; }

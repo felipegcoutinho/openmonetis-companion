@@ -45,11 +45,11 @@ jobs:
       
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk opensheets-companion-${{ github.ref_name }}.apk
+          mv app/build/outputs/apk/release/app-release.apk openmonetis-companion-${{ github.ref_name }}.apk
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: opensheets-companion-${{ github.ref_name }}.apk
+          files: openmonetis-companion-${{ github.ref_name }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

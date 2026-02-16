@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenSheetsCompanion"
+rootProject.name = "OpenMonetisCompanion"
 include(":app")

@@ -1,43 +1,42 @@
 <p align="center">
-  <img src="./logo.png" alt="OpenSheets Companion Logo" height="80" />
+  <img src="./logo.png" alt="OpenMonetis Companion Logo" height="80" />
 </p>
 
 <p align="center">
-  App Android para captura automática de notificações bancárias e integração com o OpenSheets.
+  App Android para captura automática de notificações bancárias e integração com o OpenMonetis.
 </p>
 
-> **Requer o OpenSheets instalado.** Este app é um complemento que captura notificações e envia para sua instância do [OpenSheets](https://github.com/felipegcoutinho/opensheets-app).
+> **Requer o OpenMonetis instalado.** Este app é um complemento que captura notificações e envia para sua instância do [OpenMonetis](https://github.com/felipegcoutinho/openmonetis).
 
 [![Android](https://img.shields.io/badge/Android-12+-3DDC84?style=flat-square&logo=android)](https://developer.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?style=flat-square&logo=kotlin)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=flat-square&logo=jetpack-compose)](https://developer.android.com/jetpack/compose)
 [![License](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-orange?style=flat-square&logo=creative-commons)](LICENSE)
 
 ---
 
-## 📖 Índice
+## Índice
 
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Features](#-features)
-- [Bancos Suportados](#-bancos-suportados)
-- [Tech Stack](#-tech-stack)
-- [Instalação](#-instalação)
-- [Configuração](#-configuração)
-- [Arquitetura](#-arquitetura)
-- [Desenvolvimento](#-desenvolvimento)
-- [Contribuindo](#-contribuindo)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Instalação](#instalação)
+- [Configuração](#configuração)
+- [Arquitetura](#arquitetura)
+- [Desenvolvimento](#desenvolvimento)
+- [Contribuindo](#contribuindo)
 
 ---
 
-## 🎯 Sobre o Projeto
+## Sobre o Projeto
 
-**OpenSheets Companion** é o app Android oficial do ecossistema OpenSheets. Ele captura automaticamente notificações de transações dos seus apps de banco e fintech, extrai as informações relevantes (valor, descrição) e envia para a **Caixa de Entrada** do OpenSheets como pré-lançamentos.
+**OpenMonetis Companion** é o app Android oficial do ecossistema OpenMonetis. Ele captura automaticamente notificações de transações dos seus apps de banco e fintech, extrai as informações relevantes (valor, descrição) e envia para a **Caixa de Entrada** do OpenMonetis como pré-lançamentos.
 
 ### Como funciona
 
 1. O app escuta notificações dos apps de banco configurados
 2. Quando detecta uma transação (Pix recebido, compra no cartão, etc.), extrai os dados
-3. Envia automaticamente para sua instância do OpenSheets via API
+3. Envia automaticamente para sua instância do OpenMonetis via API
 4. As transações aparecem na "Caixa de Entrada" para você revisar e aprovar
 
 ### Por que usar
@@ -49,52 +48,26 @@
 
 ---
 
-## ✨ Features
+## Features
 
-### 📱 Captura Inteligente
-
-- Escuta notificações em tempo real
-- Filtra apenas apps de banco configurados
-- Extrai valor e descrição automaticamente
-- Detecta tipo de transação (Pix, cartão, transferência)
-
-### 🔄 Sincronização
-
-- Envio automático para o OpenSheets
+- Escuta notificações em tempo real e filtra apenas apps de banco configurados
+- Extrai valor e descrição automaticamente, detectando tipo de transação (Pix, cartão, transferência)
+- Envio automático para o OpenMonetis com retry em caso de falha
 - Sincronização em segundo plano via WorkManager
-- Retry automático em caso de falha de conexão
-- Fila de notificações pendentes
-
-### 🔐 Segurança
-
-- Autenticação via token de API
-- Token armazenado com EncryptedSharedPreferences
-- Comunicação HTTPS com o servidor
-- Sem coleta de dados por terceiros
-
-### 📊 Histórico
-
-- Visualização de notificações capturadas
-- Status de sincronização (pendente, sincronizado, falha)
-- Filtros por status
-- Exclusão de notificações indesejadas
-
-### ⚙️ Configuração
-
+- Autenticação via token de API com EncryptedSharedPreferences
+- Histórico de notificações capturadas com filtros por status
 - Setup guiado de conexão com servidor
-- Seleção de apps para monitorar
 - Gatilhos de captura personalizáveis
 - Tema claro/escuro (segue sistema)
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Componente | Tecnologia |
 |------------|------------|
-| **Linguagem** | Kotlin 1.9 |
+| **Linguagem** | Kotlin |
 | **Min SDK** | Android 12 (API 31) |
-| **Target SDK** | Android 15 (API 35) |
 | **UI** | Jetpack Compose + Material 3 |
 | **Arquitetura** | MVVM + Clean Architecture |
 | **DI** | Hilt |
@@ -103,44 +76,41 @@
 | **Async** | Coroutines + Flow |
 | **Background** | WorkManager |
 | **Segurança** | EncryptedSharedPreferences |
-| **Build** | Gradle Kotlin DSL |
 
 ---
 
-## 📲 Instalação
+## Instalação
 
-### Download
-
-Baixe a última versão do APK na página de [Releases](https://github.com/felipegcoutinho/opensheets-companion/releases).
+Baixe a última versão do APK na página de [Releases](https://github.com/felipegcoutinho/openmonetis-companion/releases).
 
 ### Requisitos
 
 - Android 12 ou superior
-- Instância do OpenSheets configurada e acessível
-- Token de API gerado no OpenSheets
+- Instância do OpenMonetis configurada e acessível
+- Token de API gerado no OpenMonetis
 
 ### Instalação Manual
 
-1. Baixe o arquivo `opensheets-companion-vX.X.X.apk`
+1. Baixe o arquivo `openmonetis-companion-vX.X.X.apk`
 2. No Android, habilite "Instalar apps de fontes desconhecidas" para seu navegador/gerenciador de arquivos
 3. Abra o APK e instale
 4. Siga o assistente de configuração
 
 ---
 
-## ⚙️ Configuração
+## Configuração
 
-### 1. Gerar Token no OpenSheets
+### 1. Gerar Token no OpenMonetis
 
-1. Acesse sua instância do OpenSheets
-2. Vá em **Ajustes → OpenSheets Companion**
+1. Acesse sua instância do OpenMonetis
+2. Vá em **Ajustes → OpenMonetis Companion**
 3. Clique em **Gerar Token**
 4. Copie o token gerado (ele só é mostrado uma vez!)
 
 ### 2. Configurar o App
 
-1. Abra o OpenSheets Companion
-2. Insira a URL do seu servidor (ex: `https://opensheets.exemplo.com`)
+1. Abra o OpenMonetis Companion
+2. Insira a URL do seu servidor (ex: `https://app.openmonetis.com`)
 3. Cole o token de API
 4. Clique em **Conectar**
 
@@ -149,7 +119,7 @@ Baixe a última versão do APK na página de [Releases](https://github.com/felip
 O app solicitará permissão de **Acesso a Notificações**:
 
 1. Toque em **Conceder Permissão**
-2. Encontre "OpenSheets Companion" na lista
+2. Encontre "OpenMonetis Companion" na lista
 3. Ative a permissão
 
 ### 4. Selecionar Apps
@@ -158,13 +128,13 @@ Por padrão, os principais apps de banco já vêm configurados. Você pode ajust
 
 ---
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ### Estrutura do Projeto
 
 ```
-app/src/main/java/br/com/opensheets/companion/
-├── OpenSheetsApp.kt              # Application class (Hilt)
+app/src/main/java/br/com/openmonetis/companion/
+├── OpenMonetisApp.kt              # Application class (Hilt)
 ├── di/                           # Módulos de Injeção de Dependência
 │   ├── AppModule.kt
 │   ├── DatabaseModule.kt
@@ -196,47 +166,7 @@ app/src/main/java/br/com/opensheets/companion/
 └── util/                         # Utilitários
 ```
 
-### Fluxo de Dados
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CAPTURA DE NOTIFICAÇÃO                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. NotificationListenerService                             │
-│     ├── Recebe notificação do sistema                      │
-│     ├── Filtra por packageName (apps configurados)         │
-│     └── Extrai título e texto                              │
-│                            ↓                                │
-│  2. NotificationParser                                      │
-│     ├── Identifica tipo de transação                       │
-│     ├── Extrai valor (regex)                               │
-│     └── Extrai descrição/nome                              │
-│                            ↓                                │
-│  3. NotificationRepository                                  │
-│     ├── Salva no Room (local)                              │
-│     └── Status: PENDING                                     │
-│                            ↓                                │
-│  4. SyncWorker (WorkManager)                               │
-│     ├── Busca notificações PENDING                         │
-│     ├── Envia para API do OpenSheets                       │
-│     └── Atualiza status: SYNCED ou FAILED                  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Comunicação com OpenSheets
-
-```
-┌─────────────────┐         HTTPS          ┌─────────────────┐
-│                 │ ───────────────────────▶│                 │
-│   Companion     │   POST /api/inbox      │   OpenSheets    │
-│   (Android)     │   Authorization: os_*  │   (Server)      │
-│                 │◀─────────────────────── │                 │
-└─────────────────┘        200 OK          └─────────────────┘
-```
-
-**Endpoints utilizados:**
+### Comunicação com OpenMonetis
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
@@ -246,11 +176,11 @@ app/src/main/java/br/com/opensheets/companion/
 
 ---
 
-## 💻 Desenvolvimento
+## Desenvolvimento
 
 ### Pré-requisitos
 
-- Android Studio Hedgehog (2023.1.1) ou superior
+- Android Studio
 - JDK 17
 - Android SDK 35
 
@@ -258,24 +188,13 @@ app/src/main/java/br/com/opensheets/companion/
 
 1. Clone o repositório
    ```bash
-   git clone https://github.com/felipegcoutinho/opensheets-companion.git
-   cd opensheets-companion
+   git clone https://github.com/felipegcoutinho/openmonetis-companion.git
+   cd openmonetis-companion
    ```
 
-2. Abra no Android Studio
-   ```
-   File → Open → selecionar diretório
-   ```
+2. Abra no Android Studio e sincronize o Gradle
 
-3. Sincronize o Gradle
-   ```
-   O Android Studio fará automaticamente
-   ```
-
-4. Execute no emulador ou dispositivo
-   ```
-   Run → Run 'app'
-   ```
+3. Execute no emulador ou dispositivo: **Run → Run 'app'**
 
 ### Build Release
 
@@ -285,43 +204,25 @@ app/src/main/java/br/com/opensheets/companion/
 
 O APK será gerado em `app/build/outputs/apk/release/`.
 
-### Estrutura de Branches
-
-- `master` - Versão estável
-- `develop` - Desenvolvimento ativo
-- `feature/*` - Novas features
-- `fix/*` - Correções de bugs
-
 ---
 
-## 🤝 Contribuindo
+## Contribuindo
 
 Contribuições são bem-vindas!
-
-### Como contribuir
 
 1. **Fork** o projeto
 2. **Clone** seu fork
    ```bash
-   git clone https://github.com/seu-usuario/opensheets-companion.git
+   git clone https://github.com/seu-usuario/openmonetis-companion.git
    ```
 3. **Crie uma branch** para sua feature
    ```bash
    git checkout -b feature/minha-feature
    ```
 4. **Commit** suas mudanças
-   ```bash
-   git commit -m 'feat: adiciona suporte ao banco X'
-   ```
-5. **Push** para a branch
-   ```bash
-   git push origin feature/minha-feature
-   ```
-6. Abra um **Pull Request**
+5. **Push** e abra um **Pull Request**
 
 ### Adicionando Suporte a Novo Banco
-
-Para adicionar suporte a um novo banco, você precisa:
 
 1. Identificar o `packageName` do app
 2. Criar regras de parsing em `NotificationParser`
@@ -330,33 +231,22 @@ Para adicionar suporte a um novo banco, você precisa:
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** (CC BY-NC-SA 4.0).
 
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-
 ---
 
-## 🔗 Links
+## Links
 
-- **OpenSheets (Web App):** [github.com/felipegcoutinho/opensheets-app](https://github.com/felipegcoutinho/opensheets-app)
-- **Releases:** [github.com/felipegcoutinho/opensheets-companion/releases](https://github.com/felipegcoutinho/opensheets-companion/releases)
-- **Issues:** [github.com/felipegcoutinho/opensheets-companion/issues](https://github.com/felipegcoutinho/opensheets-companion/issues)
-
----
-
-## 📞 Contato
-
-**Desenvolvido por:** Felipe Coutinho
-**GitHub:** [@felipegcoutinho](https://github.com/felipegcoutinho)
+- **OpenMonetis (Web App):** [github.com/felipegcoutinho/openmonetis](https://github.com/felipegcoutinho/openmonetis)
+- **Releases:** [github.com/felipegcoutinho/openmonetis-companion/releases](https://github.com/felipegcoutinho/openmonetis-companion/releases)
+- **Issues:** [github.com/felipegcoutinho/openmonetis-companion/issues](https://github.com/felipegcoutinho/openmonetis-companion/issues)
 
 ---
 
 <div align="center">
 
-**Parte do ecossistema [OpenSheets](https://github.com/felipegcoutinho/opensheets-app)**
-
-Desenvolvido com ❤️ para a comunidade open source
+**Parte do ecossistema [OpenMonetis](https://github.com/felipegcoutinho/openmonetis)**
 
 </div>
