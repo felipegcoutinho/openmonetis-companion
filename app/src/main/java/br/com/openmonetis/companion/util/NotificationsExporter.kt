@@ -17,7 +17,8 @@ import javax.inject.Singleton
 
 data class ExportResult(
     val fileName: String,
-    val notificationCount: Int
+    val notificationCount: Int,
+    val uri: android.net.Uri
 )
 
 @Singleton
@@ -58,7 +59,8 @@ class NotificationsExporter @Inject constructor(
 
         return ExportResult(
             fileName = fileName,
-            notificationCount = notifications.size
+            notificationCount = notifications.size,
+            uri = uri
         )
     }
 
@@ -82,6 +84,7 @@ class NotificationsExporter @Inject constructor(
                     put("serverItemId", notification.serverItemId)
                     put("syncError", notification.syncError)
                     put("createdAt", notification.createdAt)
+                    put("syncedAt", notification.syncedAt)
                 }
             )
         }

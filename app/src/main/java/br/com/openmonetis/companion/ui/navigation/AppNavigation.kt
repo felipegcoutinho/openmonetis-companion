@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,7 +32,7 @@ fun AppNavigation() {
     val setupViewModel: SetupViewModel = hiltViewModel()
     val isConfigured by setupViewModel.isConfigured.collectAsState()
 
-    val startDestination = if (isConfigured) Screen.Home.route else Screen.Setup.route
+    val startDestination = androidx.compose.runtime.remember { if (isConfigured) Screen.Home.route else Screen.Setup.route }
 
     NavHost(
         navController = navController,
@@ -51,25 +53,25 @@ fun AppNavigation() {
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 },
-                onNavigateToKeywords = {
-                    navController.navigate(Screen.KeywordsSettings.route)
-                },
-                onNavigateToLogs = {
-                    navController.navigate(Screen.Logs.route)
-                }
+                onEditConnection = { navController.navigate("settings?editConnection=true") },
+                onNavigateToHistory = { filter -> navController.navigate("history?filter=${filter.name}") }
             )
         }
 
-        composable(Screen.History.route) {
+        composable("history?filter={filter}", arguments = listOf(navArgument("filter") { defaultValue = "PENDING" })) {
             HistoryScreen(
+                onEditConnection = { navController.navigate("settings?editConnection=true") },
                 onNavigateBack = {
                     navController.popBackStack()
                 }
             )
         }
 
-        composable(Screen.Settings.route) {
+        composable("settings?editConnection={editConnection}", arguments = listOf(navArgument("editConnection") { type = NavType.BoolType; defaultValue = false })) { entry ->
             SettingsScreen(
+                openConnection = entry.arguments?.getBoolean("editConnection") == true,
+                onNavigateToKeywords = { navController.navigate(Screen.KeywordsSettings.route) },
+                onNavigateToLogs = { navController.navigate(Screen.Logs.route) },
                 onNavigateBack = {
                     navController.popBackStack()
                 },

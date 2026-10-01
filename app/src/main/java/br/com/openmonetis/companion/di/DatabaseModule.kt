@@ -27,7 +27,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "openmonetis_companion.db"
-        ).build()
+        ).addMigrations(AppDatabase.MIGRATION_1_2).build()
     }
 
     @Provides

@@ -4,6 +4,7 @@ import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import br.com.openmonetis.companion.BuildConfig
 import br.com.openmonetis.companion.data.local.dao.AppConfigDao
 import br.com.openmonetis.companion.data.local.dao.KeywordsSettingsDao
 import br.com.openmonetis.companion.data.local.dao.NotificationDao
@@ -76,7 +77,9 @@ class CaptureNotificationListenerService : NotificationListenerService() {
                 }
 
                 if (!matchesTrigger) {
-                    Log.d(TAG, "Notification doesn't match any trigger: $text")
+                    if (BuildConfig.DEBUG) {
+                        Log.d(TAG, "Notification does not match a configured trigger")
+                    }
                     return@launch
                 }
 
@@ -101,10 +104,12 @@ class CaptureNotificationListenerService : NotificationListenerService() {
                 // Schedule sync
                 SyncWorker.enqueue(applicationContext)
 
-                Log.d(TAG, "Notification captured: ${appConfig.displayName} - $text")
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Notification captured for $packageName")
+                }
 
-            } catch (e: Exception) {
-                Log.e(TAG, "Error processing notification", e)
+            } catch (error: Exception) {
+                if (BuildConfig.DEBUG) Log.e(TAG, "Error processing notification", error)
             }
         }
     }
@@ -118,4 +123,3 @@ class CaptureNotificationListenerService : NotificationListenerService() {
         private const val TAG = "NotificationCapture"
     }
 }
-

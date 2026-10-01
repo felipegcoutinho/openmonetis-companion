@@ -26,7 +26,7 @@ class AuthInterceptor @Inject constructor(
             return chain.proceed(originalRequest)
         }
 
-        // Check if we have an existing Authorization header (for refresh token)
+        // Preserve explicit credentials used by narrowly scoped compatibility calls.
         if (originalRequest.header("Authorization") != null) {
             return chain.proceed(originalRequest)
         }

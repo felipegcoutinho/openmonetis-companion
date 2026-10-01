@@ -14,8 +14,8 @@ android {
         applicationId = "br.com.openmonetis.companion"
         minSdk = 31 // Android 12
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.5.2"
+        versionCode = 10
+        versionName = "1.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -53,6 +53,8 @@ android {
         jvmTarget = "17"
     }
 
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -63,6 +65,7 @@ dependencies {
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
 
@@ -121,4 +124,13 @@ dependencies {
 
     // Tests
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.work:work-testing:2.10.0")
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }

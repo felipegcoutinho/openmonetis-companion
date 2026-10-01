@@ -32,7 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,8 +40,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.openmonetis.companion.data.local.entities.SyncLogType
-import br.com.openmonetis.companion.ui.theme.Success
-import br.com.openmonetis.companion.ui.theme.Warning
+import br.com.openmonetis.companion.ui.theme.success
+import br.com.openmonetis.companion.ui.theme.warning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +49,7 @@ fun LogsScreen(
     onNavigateBack: () -> Unit,
     viewModel: LogsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -78,7 +78,7 @@ fun LogsScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
                 }
             }
             uiState.isEmpty -> {
@@ -131,8 +131,8 @@ private fun LogCard(log: LogUiItem) {
     val (icon, iconTint, containerColor) = when (log.type) {
         SyncLogType.SUCCESS -> Triple(
             Icons.Default.CheckCircle,
-            Success,
-            Success.copy(alpha = 0.1f)
+            MaterialTheme.colorScheme.success,
+            MaterialTheme.colorScheme.success.copy(alpha = 0.1f)
         )
         SyncLogType.ERROR -> Triple(
             Icons.Default.Error,
@@ -141,12 +141,12 @@ private fun LogCard(log: LogUiItem) {
         )
         SyncLogType.WARNING -> Triple(
             Icons.Default.Warning,
-            Warning,
-            Warning.copy(alpha = 0.1f)
+            MaterialTheme.colorScheme.warning,
+            MaterialTheme.colorScheme.warning.copy(alpha = 0.1f)
         )
         SyncLogType.INFO -> Triple(
             Icons.Default.Info,
-            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary,
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     }
@@ -173,7 +173,7 @@ private fun LogCard(log: LogUiItem) {
                     Text(
                         text = log.entryLabel,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     if (log.entryDetails != null) {
                         Spacer(modifier = Modifier.height(2.dp))

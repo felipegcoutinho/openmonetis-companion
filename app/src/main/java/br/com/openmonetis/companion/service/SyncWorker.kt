@@ -11,6 +11,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import br.com.openmonetis.companion.BuildConfig
 import br.com.openmonetis.companion.data.local.dao.NotificationDao
 import br.com.openmonetis.companion.data.local.dao.SyncLogDao
 import br.com.openmonetis.companion.data.local.entities.SyncLogEntity
@@ -24,7 +25,6 @@ import br.com.openmonetis.companion.util.SyncResultNotifier
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -39,141 +39,77 @@ class SyncWorker @AssistedInject constructor(
     private val secureStorage: SecureStorage
 ) : CoroutineWorker(context, params) {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
     private val syncResultNotifier = SyncResultNotifier(applicationContext, secureStorage)
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Starting sync work")
-
-        // Clean old logs (older than 7 days)
-        cleanOldLogs()
-
-        // Check if configured
-        if (!secureStorage.isConfigured()) {
-            Log.w(TAG, "Not configured, skipping sync")
-            log(SyncLogType.WARNING, "Sincronização ignorada: app não configurado")
-            return Result.failure()
-        }
-
-        // Get pending notifications
-        val pending = notificationDao.getPendingSync(limit = BATCH_SIZE)
-
-        if (pending.isEmpty()) {
-            Log.d(TAG, "No pending notifications to sync")
-            return Result.success()
-        }
-
-        Log.d(TAG, "Syncing ${pending.size} notifications")
-        log(SyncLogType.INFO, "Iniciando sincronização de ${pending.size} notificações")
-
-        return try {
-            // Mark as syncing
-            pending.forEach { notification ->
-                notificationDao.updateStatus(notification.id, SyncStatus.SYNCING)
-            }
-
-            // Build batch request
-            val items = pending.map { notification ->
-                InboxRequest(
-                    sourceApp = notification.sourceApp,
-                    sourceAppName = notification.sourceAppName,
-                    originalTitle = notification.originalTitle,
-                    originalText = notification.originalText,
-                    notificationTimestamp = dateFormat.format(Date(notification.notificationTimestamp)),
-                    parsedName = notification.parsedName,
-                    parsedAmount = notification.parsedAmount,
-                    clientId = notification.id
-                )
-            }
-
-            val response = api.submitBatch(InboxBatchRequest(items))
-
-            if (response.isSuccessful) {
-                val body = response.body()
-                var successCount = 0
-                var failCount = 0
-
-                body?.results?.forEach { result ->
-                    val clientId = result.clientId ?: return@forEach
-                    val notification = pending.firstOrNull { it.id == clientId } ?: return@forEach
-
-                    if (result.success && result.serverId != null) {
-                        notificationDao.markSynced(clientId, result.serverId)
-                        syncResultNotifier.notifySuccess(notification)
-                        log(
-                            SyncLogType.SUCCESS,
-                            "Lançamento enviado com sucesso",
-                            clientId
-                        )
-                        successCount++
-                    } else {
-                        notificationDao.markSyncFailed(clientId, result.error)
-                        syncResultNotifier.notifyError(notification, result.error)
-                        log(
-                            SyncLogType.ERROR,
-                            "Falha ao sincronizar notificação",
-                            clientId,
-                            result.error
-                        )
-                        failCount++
-                    }
-                }
-
-                Log.d(TAG, "Sync completed: ${body?.success}/${body?.total} successful")
-                log(
-                    SyncLogType.SUCCESS,
-                    "Sincronização concluída: $successCount enviadas, $failCount falhas"
-                )
-
-                // Update last sync time
-                secureStorage.lastSyncTime = System.currentTimeMillis()
-
-                // If there are more pending, schedule another sync
-                val remainingCount = notificationDao.countPending()
-                if (remainingCount > 0) {
-                    enqueue(applicationContext)
-                }
-
-                Result.success()
-            } else {
-                val errorCode = response.code()
-
-                if (errorCode == 401) {
-                    // Token expired, try to refresh
-                    Log.w(TAG, "Token expired, attempting refresh")
-                    log(SyncLogType.ERROR, "Token expirado", details = "HTTP 401")
+        cleanOldData()
+        if (!secureStorage.isConfigured()) return Result.failure(androidx.work.workDataOf("error" to "CONFIGURATION"))
+        // Unique work serializes claims. Recover rows left by a process interruption.
+        notificationDao.recoverInterruptedSync()
+        var sent = 0
+        var failed = 0
+        var afterTime = Long.MIN_VALUE
+        var afterId = ""
+        val cutoff = System.currentTimeMillis()
+        val started = cutoff
+        while (true) {
+            val candidates = notificationDao.getSyncBatch(cutoff, afterTime, afterId, BATCH_SIZE)
+            if (candidates.isEmpty()) break
+            afterTime = candidates.last().createdAt
+            afterId = candidates.last().id
+            val pending = candidates.filter { notificationDao.claimForSync(it.id) == 1 }
+            if (pending.isEmpty()) continue
+            setProgress(androidx.work.workDataOf("sent" to sent, "failed" to failed))
+            try {
+                val response = api.submitBatch(InboxBatchRequest(pending.map { notification ->
+                    InboxRequest(sourceApp = notification.sourceApp, sourceAppName = notification.sourceAppName,
+                        originalTitle = notification.originalTitle, originalText = notification.originalText,
+                        notificationTimestamp = dateFormat.format(Date(notification.notificationTimestamp)),
+                        parsedName = notification.parsedName, parsedAmount = notification.parsedAmount,
+                        clientId = notification.id)
+                }))
+                if (response.isSuccessful) {
+                    val results = response.body()?.results.orEmpty().associateBy { it.clientId }
+                    // Every claimed item reaches a terminal state, even with an incomplete response.
                     pending.forEach { notification ->
-                        notificationDao.markSyncFailed(notification.id, "Token expirado")
-                        syncResultNotifier.notifyError(notification, "Token expirado")
+                        val result = results[notification.id]
+                        if (result?.success == true && result.serverId != null) {
+                            notificationDao.markSynced(notification.id, result.serverId)
+                            syncResultNotifier.notifySuccess(notification)
+                            sent++
+                        } else {
+                            notificationDao.markSyncFailed(notification.id, ITEM_SYNC_ERROR)
+                            syncResultNotifier.notifyError(notification, ITEM_SYNC_ERROR)
+                            failed++
+                        }
                     }
-                    Result.failure()
-                } else if (errorCode == 429) {
-                    // Rate limited, retry later
-                    Log.w(TAG, "Rate limited, will retry")
-                    log(SyncLogType.WARNING, "Limite de requisições atingido, tentando novamente...")
-                    pending.forEach { notification ->
-                        notificationDao.updateStatus(notification.id, SyncStatus.PENDING_SYNC)
-                    }
-                    Result.retry()
+                    if (sent > 0) secureStorage.lastSyncTime = System.currentTimeMillis()
                 } else {
-                    Log.e(TAG, "Sync failed with code $errorCode")
-                    log(SyncLogType.ERROR, "Falha na sincronização", details = "HTTP $errorCode")
-                    pending.forEach { notification ->
-                        notificationDao.markSyncFailed(notification.id, "HTTP $errorCode")
-                        syncResultNotifier.notifyError(notification, "HTTP $errorCode")
-                    }
-                    Result.retry()
+                    val unauthorized = response.code() == 401 || response.code() == 403
+                    val error = if (unauthorized) TOKEN_SYNC_ERROR else TEMPORARY_SYNC_ERROR
+                    pending.forEach { notificationDao.markSyncFailed(it.id, error) }
+                    log(SyncLogType.ERROR, error, details = "HTTP ${response.code()}")
+                    return if (unauthorized) Result.failure(androidx.work.workDataOf("error" to "AUTH", "sent" to sent))
+                        else Result.retry()
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    pending.forEach { notificationDao.changeStatusIf(it.id, SyncStatus.SYNCING, SyncStatus.PENDING_SYNC) }
+                }
+                throw cancelled
+            } catch (_: Exception) {
+                pending.forEach { notificationDao.markSyncFailed(it.id, TEMPORARY_SYNC_ERROR) }
+                log(SyncLogType.ERROR, TEMPORARY_SYNC_ERROR)
+                return Result.retry()
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Sync failed with exception", e)
-            log(SyncLogType.ERROR, "Erro na sincronização", details = e.message)
-            pending.forEach { notification ->
-                notificationDao.markSyncFailed(notification.id, e.message)
-                syncResultNotifier.notifyError(notification, e.message)
-            }
-            Result.retry()
+            // WorkManager limits workers to ten minutes; release remaining work for another attempt.
+            if (System.currentTimeMillis() - started > 8 * 60_000L) return Result.retry()
         }
+        log(if (failed == 0) SyncLogType.SUCCESS else SyncLogType.WARNING,
+            "Sincronização concluída: $sent enviadas, $failed falhas")
+        val output = androidx.work.workDataOf("sent" to sent, "failed" to failed, "error" to if (failed > 0) "ITEM" else "")
+        return if (failed > 0) Result.failure(output) else Result.success(output)
     }
 
     private suspend fun log(
@@ -192,17 +128,24 @@ class SyncWorker @AssistedInject constructor(
         )
     }
 
-    private suspend fun cleanOldLogs() {
-        val sevenDaysAgo = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, -7)
-        }.timeInMillis
-        syncLogDao.deleteOlderThan(sevenDaysAgo)
+    private suspend fun cleanOldData() {
+        val currentTime = System.currentTimeMillis()
+        syncLogDao.deleteOlderThan(currentTime - LOG_RETENTION_DAYS * DAY_IN_MILLISECONDS)
+        notificationDao.deleteTerminalOlderThan(
+            currentTime - NOTIFICATION_RETENTION_DAYS * DAY_IN_MILLISECONDS
+        )
     }
 
     companion object {
         private const val TAG = "SyncWorker"
-        private const val WORK_NAME = "sync_notifications"
+        const val WORK_NAME = "sync_notifications"
         private const val BATCH_SIZE = 50
+        private const val LOG_RETENTION_DAYS = 7L
+        private const val NOTIFICATION_RETENTION_DAYS = 30L
+        private const val DAY_IN_MILLISECONDS = 24L * 60L * 60L * 1_000L
+        private const val ITEM_SYNC_ERROR = "Falha ao enviar lançamento"
+        private const val TOKEN_SYNC_ERROR = "Token inválido ou expirado"
+        private const val TEMPORARY_SYNC_ERROR = "Falha temporária de comunicação"
 
         fun enqueue(context: Context) {
             val constraints = Constraints.Builder()
@@ -211,6 +154,7 @@ class SyncWorker @AssistedInject constructor(
 
             val request = OneTimeWorkRequestBuilder<SyncWorker>()
                 .setConstraints(constraints)
+                .addTag("requested_at:${System.currentTimeMillis()}")
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
                     30,
@@ -219,7 +163,7 @@ class SyncWorker @AssistedInject constructor(
                 .build()
 
             WorkManager.getInstance(context)
-                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE, request)
+                .enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
         }
     }
 }

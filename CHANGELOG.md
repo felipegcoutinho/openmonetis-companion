@@ -5,6 +5,54 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+## [1.6.0] - 2026-09-30
+
+### Adicionado
+
+- Leitor de QR Code no setup para importar tokens gerados pelo OpenMonetis.
+- Testes instrumentados de migração, histórico, concorrência de ações, lotes e fluxos de UI.
+- Validação automatizada da política de URLs e do protocolo versionado de pareamento.
+
+### Segurança
+
+- Servidores de produção exigem HTTPS; HTTP fica restrito a origens locais em builds de debug.
+- Verificação de servidor e token ocorre antes de substituir credenciais armazenadas.
+- Tokens deixam de aparecer na edição do servidor e passam a ser mascarados nos campos de entrada.
+- Logs HTTP não registram headers ou corpos e ficam desativados em builds de produção.
+- Logs locais deixam de armazenar conteúdo integral de notificações e mensagens de exceção.
+- A listagem de aplicativos deixa de solicitar acesso a todos os pacotes instalados.
+
+### Alterado
+
+- Home reorganizada com status de captura, andamento real do WorkManager, contadores e checklist de primeiro uso.
+- Apps monitorados exibem ícones e nomes em grade centralizada e adaptativa na Home; o card operacional usa um tom suave de laranja em ambos os temas.
+- Card operacional mostra “Conexão configurada” e exibe a última verificação somente quando há uma data registrada.
+- Filtros de Home e histórico se adaptam em uma ou duas colunas conforme largura e tamanho de fonte, sem ultrapassar a tela.
+- Barra de status no tema claro usa laranja primário e símbolos escuros.
+- Ícone do Companion diferenciado do PWA: fundo branco puro, marca laranja e símbolo 20% menor.
+- Histórico acessível pela Home, com filtros nomeados, contagens e carregamento incremental após filtragem no banco.
+- Configurações priorizam apps monitorados, permitem seleção múltipla e incluem gatilhos e diagnóstico.
+- Setup com etapas explícitas, rolagem, adaptação ao teclado, ações IME e recuperação da permissão de câmera.
+- Cards, filtros, detalhes e formatação de valores/datas compartilhados entre Home e histórico.
+- Exclusão individual e descarte oferecem desfazer; limpeza geral informa total e pendências e protege envios em andamento.
+- Exportação JSON oferece compartilhamento e inclui o horário real de envio.
+- Room migra de 1 para 2 preservando dados; “Enviados hoje” passa a usar a data efetiva do envio.
+- Sincronização serializada drena lotes, trata respostas incompletas e propaga cancelamento; novos pedidos não interrompem envios ativos.
+
+- Identidade visual alinhada ao OpenMonetis: temas claro e escuro, cores semânticas e tipografia GT America.
+- Logos, splash e ícones do Companion usam os vetores oficiais do projeto principal, com suporte a ícones temáticos do Android.
+- Textos e ações sobre fundos claros usam a cor de marca com maior contraste; cores de sucesso e aviso acompanham o tema.
+- README revisado com logo para temas claro e escuro, instruções de pareamento e permissões atuais, estrutura real do código e links para os reviews.
+- Exports auxiliares de ícones Android e imagem de loja alinhados à marca oficial.
+- Notificações sincronizadas, processadas ou descartadas passam a ser removidas após 30 dias.
+
+### Removido
+
+- Contrato e armazenamento de refresh token que não fazem parte da API do OpenMonetis.
+- Campo `userId` legado da resposta de verificação do dispositivo.
+
 ## [1.5.2] - 2026-05-30
 
 ### Adicionado

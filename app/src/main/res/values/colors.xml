@@ -1,27 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <!-- OpenMonetis Brand Colors - Terracotta Orange -->
-    <color name="primary">#E87040</color>
-    <color name="primary_variant">#D45D30</color>
-    <color name="secondary">#8B7355</color>
-    <color name="secondary_variant">#6B5A45</color>
-
-    <!-- Status Colors -->
-    <color name="success">#22C55E</color>
-    <color name="warning">#F59E0B</color>
-    <color name="error">#DC2626</color>
-
-    <!-- Light Theme Colors -->
-    <color name="background_light">#F7F4F0</color>
-    <color name="surface_light">#FFFFFF</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="on_secondary">#FFFFFF</color>
-    <color name="on_background_light">#2D2926</color>
-    <color name="on_surface_light">#2D2926</color>
-
-    <!-- Dark Theme Colors -->
-    <color name="background_dark">#2B2B2B</color>
-    <color name="surface_dark">#3A3836</color>
-    <color name="on_background_dark">#E8E4DC</color>
-    <color name="on_surface_dark">#E8E4DC</color>
+    <color name="brand_orange">#FC941D</color>
+    <color name="brand_strong">#945712</color>
+    <color name="app_background">#F6F4F1</color>
+    <color name="launcher_background">#FFFFFF</color>
 </resources>

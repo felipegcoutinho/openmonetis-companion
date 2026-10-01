@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import br.com.openmonetis.companion.BuildConfig
 
 /**
  * Receives boot completed broadcasts to ensure the NotificationListenerService
@@ -15,7 +16,7 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON"
         ) {
-            Log.d(TAG, "Boot completed, scheduling sync check")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Boot completed, scheduling sync check")
 
             // Schedule a sync to catch up on any pending notifications
             SyncWorker.enqueue(context)

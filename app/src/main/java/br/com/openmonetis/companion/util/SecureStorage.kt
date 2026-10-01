@@ -2,6 +2,7 @@ package br.com.openmonetis.companion.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.channels.awaitClose
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -36,10 +37,6 @@ class SecureStorage @Inject constructor(
         get() = prefs.getString(KEY_ACCESS_TOKEN, null)
         set(value) = prefs.edit().putString(KEY_ACCESS_TOKEN, value).apply()
 
-    var refreshToken: String?
-        get() = prefs.getString(KEY_REFRESH_TOKEN, null)
-        set(value) = prefs.edit().putString(KEY_REFRESH_TOKEN, value).apply()
-
     var tokenId: String?
         get() = prefs.getString(KEY_TOKEN_ID, null)
         set(value) = prefs.edit().putString(KEY_TOKEN_ID, value).apply()
@@ -55,6 +52,19 @@ class SecureStorage @Inject constructor(
     var lastSyncTime: Long
         get() = prefs.getLong(KEY_LAST_SYNC_TIME, 0L)
         set(value) = prefs.edit().putLong(KEY_LAST_SYNC_TIME, value).apply()
+
+    var lastVerifiedTime: Long
+        get() = prefs.getLong("last_verified_time", 0L)
+        set(value) = prefs.edit().putLong("last_verified_time", value).apply()
+
+    data class ConnectionState(val configured: Boolean, val lastSyncTime: Long, val lastVerifiedTime: Long)
+    fun observeConnection(): kotlinx.coroutines.flow.Flow<ConnectionState> = kotlinx.coroutines.flow.callbackFlow {
+        fun emit() { trySend(ConnectionState(isConfigured(), lastSyncTime, lastVerifiedTime)) }
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> emit() }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        emit()
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     var notifySyncSuccess: Boolean
         get() = prefs.getBoolean(KEY_NOTIFY_SYNC_SUCCESS, true)
@@ -75,26 +85,16 @@ class SecureStorage @Inject constructor(
     fun saveCredentials(
         serverUrl: String,
         accessToken: String,
-        refreshToken: String?,
         tokenId: String?,
         tokenName: String?
     ) {
         prefs.edit().apply {
             putString(KEY_SERVER_URL, serverUrl)
             putString(KEY_ACCESS_TOKEN, accessToken)
-            putString(KEY_REFRESH_TOKEN, refreshToken)
+            remove(KEY_REFRESH_TOKEN)
             putString(KEY_TOKEN_ID, tokenId)
             putString(KEY_TOKEN_NAME, tokenName)
-            apply()
-        }
-    }
-
-    fun updateTokens(accessToken: String, refreshToken: String? = null) {
-        prefs.edit().apply {
-            putString(KEY_ACCESS_TOKEN, accessToken)
-            if (refreshToken != null) {
-                putString(KEY_REFRESH_TOKEN, refreshToken)
-            }
+            putLong("last_verified_time", System.currentTimeMillis())
             apply()
         }
     }

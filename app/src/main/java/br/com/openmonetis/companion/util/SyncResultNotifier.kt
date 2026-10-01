@@ -60,7 +60,12 @@ class SyncResultNotifier(
             builder.setLargeIcon(bitmap)
         }
 
-        NotificationManagerCompat.from(context).notify(notification.id.hashCode(), builder.build())
+        try {
+            NotificationManagerCompat.from(context)
+                .notify(notification.id.hashCode(), builder.build())
+        } catch (_: SecurityException) {
+            // Permission may be revoked between the explicit check and this call.
+        }
     }
 
     private fun buildSuccessMessage(notification: NotificationEntity): String {

@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8'?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="134dp" android:height="21dp" android:viewportWidth="6015" android:viewportHeight="943">
+    <group android:translateX="-6.0" android:translateY="728.0">
+        <group android:scaleX="1.0" android:scaleY="-1.0">
+            <group android:translateX="0.0" android:translateY="0">
+                <path android:pathData="M283 -12 C427 -12 528 83 528 251 C528 418 427 512 283 512 C139 512 38 418 38 251 C38 83 139 -12 283 -12 Z M283 79 C206 79 160 137 160 251 C160 365 206 421 283 421 C360 421 405 365 405 251 C405 137 360 79 283 79 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="566.0" android:translateY="0">
+                <path android:pathData="M200 -195 L200 72 C227 23 277 -12 348 -12 C471 -12 555 90 555 251 C555 409 474 512 354 512 C283 512 225 478 194 413 L194 500 L80 500 L80 -195 Z M313 80 C242 80 197 141 197 237 L197 262 C197 363 242 420 314 420 C387 420 430 358 430 251 C430 144 385 80 313 80 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="1160.0" android:translateY="0">
+                <path android:pathData="M505 275 C505 428 422 512 277 512 C128 512 38 410 38 245 C38 81 130 -12 283 -12 C385 -12 464 36 501 123 L409 165 C386 111 344 82 287 82 C208 82 155 136 154 220 L505 220 Z M154 299 C156 382 199 432 275 432 C346 432 387 389 387 307 L387 299 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="1708.0" android:translateY="0">
+                <path android:pathData="M200 0 L200 265 C200 360 242 416 312 416 C375 416 405 377 405 298 L405 0 L526 0 L526 310 C526 444 469 512 360 512 C283 512 228 476 194 403 L194 500 L80 500 L80 0 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="2301.0" android:translateY="0">
+                <path android:pathData="M80 0 L200 0 L200 289 C200 369 235 416 295 416 C348 416 376 380 376 311 L376 0 L496 0 L496 292 C496 372 530 416 591 416 C646 416 673 381 673 308 L673 0 L793 0 L793 327 C793 444 736 512 640 512 C570 512 518 479 484 411 C460 478 412 512 342 512 C272 512 224 479 194 411 L194 500 L80 500 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="3161.0" android:translateY="0">
+                <path android:pathData="M283 -12 C427 -12 528 83 528 251 C528 418 427 512 283 512 C139 512 38 418 38 251 C38 83 139 -12 283 -12 Z M283 79 C206 79 160 137 160 251 C160 365 206 421 283 421 C360 421 405 365 405 251 C405 137 360 79 283 79 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="3727.0" android:translateY="0">
+                <path android:pathData="M200 0 L200 265 C200 360 242 416 312 416 C375 416 405 377 405 298 L405 0 L526 0 L526 310 C526 444 469 512 360 512 C283 512 228 476 194 403 L194 500 L80 500 L80 0 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="4320.0" android:translateY="0">
+                <path android:pathData="M505 275 C505 428 422 512 277 512 C128 512 38 410 38 245 C38 81 130 -12 283 -12 C385 -12 464 36 501 123 L409 165 C386 111 344 82 287 82 C208 82 155 136 154 220 L505 220 Z M154 299 C156 382 199 432 275 432 C346 432 387 389 387 307 L387 299 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="4866.0" android:translateY="0">
+                <path android:pathData="M101 413 L101 155 C101 54 141 -9 261 -9 C292 -9 314 -6 343 0 L343 101 C327 98 314 95 294 95 C244 95 221 121 221 174 L221 413 L343 413 L343 500 L221 500 L221 674 L101 626 L101 500 L11 500 L11 413 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="5239.0" android:translateY="0">
+                <path android:pathData="M205 583 L205 708 L75 708 L75 583 Z M200 0 L200 500 L80 500 L80 0 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+            <group android:translateX="5518.0" android:translateY="0">
+                <path android:pathData="M263 -12 C394 -12 468 52 468 146 C468 225 427 273 330 290 L232 308 C188 316 166 331 166 365 C166 404 197 425 253 425 C319 425 363 397 387 352 L471 397 C447 469 366 512 260 512 C133 512 56 448 56 358 C56 278 105 229 199 212 L288 196 C337 188 359 174 359 138 C359 102 327 76 266 76 C195 76 145 108 122 164 L33 124 C64 36 149 -12 263 -12 Z" android:fillColor="#000000" android:fillType="nonZero" />
+            </group>
+        </group>
+    </group>
+</vector>

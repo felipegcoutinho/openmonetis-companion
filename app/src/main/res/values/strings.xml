@@ -9,10 +9,16 @@
     <string name="setup_server_url_placeholder">https://openmonetis.exemplo.com</string>
     <string name="setup_verify_connection">Verificar Conexão</string>
     <string name="setup_token_title">Autenticação</string>
-    <string name="setup_token_description">Cole o token de API gerado no OpenMonetis</string>
+    <string name="setup_token_description">Escaneie ou cole o token gerado no OpenMonetis</string>
     <string name="setup_token_label">Token de API</string>
-    <string name="setup_token_placeholder">os_xxxxxxxxxxxx</string>
+    <string name="setup_token_placeholder">opm_xxxxxxxxxxxx</string>
     <string name="setup_connect">Conectar</string>
+    <string name="setup_scan_qr">Escanear QR Code</string>
+    <string name="setup_camera_permission_required">Permita o acesso à câmera para escanear o QR Code.</string>
+    <string name="setup_camera_error">Não foi possível abrir a câmera.</string>
+    <string name="qr_scanner_close">Fechar leitor</string>
+    <string name="qr_scanner_instruction">Aponte a câmera para o QR Code do OpenMonetis</string>
+    <string name="qr_scanner_invalid">QR Code inválido. Gere um novo token no OpenMonetis.</string>
 
     <!-- Home -->
     <string name="home_title">Início</string>

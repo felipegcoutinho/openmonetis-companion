@@ -10,14 +10,18 @@ import androidx.lifecycle.viewModelScope
 import br.com.openmonetis.companion.data.local.dao.AppConfigDao
 import br.com.openmonetis.companion.data.local.dao.NotificationDao
 import br.com.openmonetis.companion.data.local.entities.AppConfigEntity
+import br.com.openmonetis.companion.data.remote.DeviceConnectionVerifier
+import br.com.openmonetis.companion.util.CompanionQrCode
 import br.com.openmonetis.companion.util.NotificationsExporter
 import br.com.openmonetis.companion.util.SecureStorage
+import br.com.openmonetis.companion.util.ServerUrlPolicy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -39,6 +43,12 @@ data class SettingsUiState(
     val serverUrl: String = "",
     val tokenName: String = "",
     val isConnected: Boolean = false,
+    val disconnected: Boolean = false,
+    val lastVerifiedTime: Long = 0,
+    val deleteCount: Int = 0,
+    val pendingDeleteCount: Int = 0,
+    val clearDataError: String? = null,
+    val exportedUri: String? = null,
     val monitoredApps: List<MonitoredAppUi> = emptyList(),
     val appVersion: String = "",
     val showDisconnectDialog: Boolean = false,
@@ -47,6 +57,8 @@ data class SettingsUiState(
     val showEditServerDialog: Boolean = false,
     val editServerUrl: String = "",
     val editToken: String = "",
+    val editServerError: String? = null,
+    val isSavingServer: Boolean = false,
     val installedApps: List<InstalledAppUi> = emptyList(),
     val appSearchQuery: String = "",
     val isLoadingApps: Boolean = false,
@@ -60,6 +72,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val secureStorage: SecureStorage,
+    private val connectionVerifier: DeviceConnectionVerifier,
     private val appConfigDao: AppConfigDao,
     private val notificationDao: NotificationDao,
     private val notificationsExporter: NotificationsExporter
@@ -72,19 +85,26 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadSettings()
+        viewModelScope.launch {
+            appConfigDao.getAllFlow().collectLatest { loadMonitoredApps() }
+        }
+        viewModelScope.launch {
+            secureStorage.observeConnection().collect { state ->
+                _uiState.value = _uiState.value.copy(lastVerifiedTime = state.lastVerifiedTime)
+            }
+        }
     }
 
     private fun loadSettings() {
         viewModelScope.launch {
             val serverUrl = secureStorage.serverUrl ?: ""
             val tokenName = secureStorage.tokenName ?: ""
-            val hasToken = secureStorage.accessToken != null
             val appVersion = getAppVersion()
 
             _uiState.value = _uiState.value.copy(
                 serverUrl = serverUrl,
                 tokenName = tokenName,
-                isConnected = hasToken && serverUrl.isNotEmpty(),
+                isConnected = secureStorage.isConfigured(),
                 appVersion = appVersion,
                 notifySyncSuccess = secureStorage.notifySyncSuccess,
                 notifySyncError = secureStorage.notifySyncError
@@ -97,7 +117,7 @@ class SettingsViewModel @Inject constructor(
     private suspend fun loadMonitoredApps() {
         val apps = appConfigDao.getAll()
         val pm = context.packageManager
-        val uiApps = apps.map { app ->
+        val uiApps = withContext(Dispatchers.IO) { apps.map { app ->
             val icon = try {
                 pm.getApplicationIcon(app.packageName)
             } catch (e: Exception) {
@@ -109,6 +129,7 @@ class SettingsViewModel @Inject constructor(
                 isEnabled = app.isEnabled,
                 icon = icon
             )
+        }
         }
         _uiState.value = _uiState.value.copy(monitoredApps = uiApps)
     }
@@ -185,7 +206,7 @@ class SettingsViewModel @Inject constructor(
             
             allInstalledApps = apps
             _uiState.value = _uiState.value.copy(
-                installedApps = apps,
+                installedApps = apps.filter { it.displayName.contains(_uiState.value.appSearchQuery, true) || it.packageName.contains(_uiState.value.appSearchQuery, true) },
                 isLoadingApps = false
             )
         }
@@ -203,15 +224,11 @@ class SettingsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(installedApps = filtered)
     }
 
-    fun addApp(packageName: String, displayName: String) {
+    fun addApps(packages: Set<String>) {
         viewModelScope.launch {
-            val config = AppConfigEntity(
-                packageName = packageName,
-                displayName = displayName,
-                isEnabled = true
-            )
-            appConfigDao.insert(config)
-            loadMonitoredApps()
+            allInstalledApps.filter { it.packageName in packages }.forEach { app ->
+                appConfigDao.insert(AppConfigEntity(packageName = app.packageName, displayName = app.displayName))
+            }
             hideAddAppDialog()
         }
     }
@@ -225,7 +242,10 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun showClearDataDialog() {
-        _uiState.value = _uiState.value.copy(showClearDataDialog = true)
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(showClearDataDialog = true,
+                deleteCount = notificationDao.countAll(), pendingDeleteCount = notificationDao.countPending(), clearDataError = null)
+        }
     }
 
     fun hideClearDataDialog() {
@@ -239,6 +259,7 @@ class SettingsViewModel @Inject constructor(
                 serverUrl = "",
                 tokenName = "",
                 isConnected = false,
+                disconnected = true,
                 showDisconnectDialog = false
             )
         }
@@ -248,7 +269,8 @@ class SettingsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             showEditServerDialog = true,
             editServerUrl = _uiState.value.serverUrl,
-            editToken = secureStorage.accessToken ?: ""
+            editToken = "",
+            editServerError = null
         )
     }
 
@@ -256,43 +278,98 @@ class SettingsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             showEditServerDialog = false,
             editServerUrl = "",
-            editToken = ""
+            editToken = "",
+            editServerError = null,
+            isSavingServer = false
         )
     }
 
     fun updateEditServerUrl(url: String) {
-        _uiState.value = _uiState.value.copy(editServerUrl = url)
+        _uiState.value = _uiState.value.copy(editServerUrl = url, editServerError = null)
     }
 
     fun updateEditToken(token: String) {
-        _uiState.value = _uiState.value.copy(editToken = token)
+        _uiState.value = _uiState.value.copy(editToken = token, editServerError = null)
     }
 
     fun saveServerSettings() {
+        if (_uiState.value.isSavingServer) return
         viewModelScope.launch {
-            val url = _uiState.value.editServerUrl.trim()
-            val token = _uiState.value.editToken.trim()
-
-            if (url.isNotEmpty()) {
-                secureStorage.serverUrl = url
-            }
-            if (token.isNotEmpty()) {
-                secureStorage.accessToken = token
+            val serverOrigin = ServerUrlPolicy.parse(_uiState.value.editServerUrl)
+            if (serverOrigin == null) {
+                _uiState.value = _uiState.value.copy(editServerError = "Use uma URL HTTPS válida")
+                return@launch
             }
 
+            val normalizedUrl = serverOrigin.toString().removeSuffix("/")
+            val previousUrl = secureStorage.serverUrl.orEmpty()
+            val previousToken = secureStorage.accessToken.orEmpty()
+            val newTokenInput = _uiState.value.editToken.trim()
+            val newToken = newTokenInput
+                .takeIf(String::isNotEmpty)
+                ?.let(CompanionQrCode::extractToken)
+            if (newTokenInput.isNotEmpty() && newToken == null) {
+                _uiState.value = _uiState.value.copy(editServerError = "Informe um token válido")
+                return@launch
+            }
+            val serverChanged = ServerUrlPolicy.normalize(previousUrl) != normalizedUrl
+            if (serverChanged && newToken == null) {
+                _uiState.value = _uiState.value.copy(
+                    editServerError = "Informe um novo token ao trocar de servidor"
+                )
+                return@launch
+            }
+
+            val token = newToken ?: previousToken
+            if (token.isEmpty()) {
+                _uiState.value = _uiState.value.copy(editServerError = "Informe o token de acesso")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(isSavingServer = true, editServerError = null)
+            val verified = try { connectionVerifier.verify(serverOrigin, token) } catch (_: java.io.IOException) {
+                _uiState.value = _uiState.value.copy(isSavingServer = false,
+                    editServerError = "Não foi possível acessar o servidor. Verifique a conexão e tente novamente.")
+                return@launch
+            }
+            if (verified == null) {
+                _uiState.value = _uiState.value.copy(
+                    isSavingServer = false,
+                    editServerError = "Servidor ou token inválido"
+                )
+                return@launch
+            }
+
+            secureStorage.saveCredentials(
+                serverUrl = normalizedUrl,
+                accessToken = token,
+                tokenId = verified.tokenId,
+                tokenName = verified.tokenName
+            )
             _uiState.value = _uiState.value.copy(
-                serverUrl = url,
-                isConnected = url.isNotEmpty() && token.isNotEmpty(),
+                serverUrl = normalizedUrl,
+                tokenName = verified.tokenName.orEmpty(),
+                isConnected = true,
                 showEditServerDialog = false,
                 editServerUrl = "",
-                editToken = ""
+                editToken = "",
+                editServerError = null,
+                isSavingServer = false
             )
         }
     }
 
     fun clearAllData() {
         viewModelScope.launch {
-            notificationDao.deleteAll()
+            if (notificationDao.countByStatus(br.com.openmonetis.companion.data.local.entities.SyncStatus.SYNCING) > 0) {
+                _uiState.value = _uiState.value.copy(clearDataError = "Há um envio em andamento. Aguarde e tente novamente.")
+                return@launch
+            }
+            val removed = notificationDao.deleteUnlessAnySyncing()
+            if (removed == 0 && notificationDao.countAll() > 0) {
+                _uiState.value = _uiState.value.copy(clearDataError = "O envio começou. Aguarde e tente novamente.")
+                return@launch
+            }
             hideClearDataDialog()
         }
     }
@@ -308,18 +385,19 @@ class SettingsViewModel @Inject constructor(
                     notificationsExporter.exportToDownloads()
                 }
                 val message = if (result.notificationCount > 0) {
-                    "${result.notificationCount} notificacoes exportadas para Downloads/${result.fileName}"
+                    "${result.notificationCount} notificações exportadas para Downloads/${result.fileName}"
                 } else {
-                    "Arquivo criado em Downloads/${result.fileName}, mas nao havia notificacoes salvas"
+                    "Arquivo criado em Downloads/${result.fileName}, mas não havia notificações salvas"
                 }
                 _uiState.value = _uiState.value.copy(
                     isExportingNotifications = false,
-                    exportMessage = message
+                    exportMessage = message,
+                    exportedUri = result.uri.toString()
                 )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isExportingNotifications = false,
-                    exportMessage = "Falha ao exportar notificacoes: ${e.message ?: "erro desconhecido"}"
+                    exportMessage = "Não foi possível exportar as notificações", exportedUri = null
                 )
             }
         }

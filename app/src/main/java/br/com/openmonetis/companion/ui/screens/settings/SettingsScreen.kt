@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -35,6 +39,8 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,16 +49,24 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import br.com.openmonetis.companion.ui.components.OpenMonetisOutlinedButton as OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import br.com.openmonetis.companion.ui.components.OpenMonetisTextButton as TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,24 +74,42 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.core.content.ContextCompat
 import br.com.openmonetis.companion.R
+import br.com.openmonetis.companion.ui.components.OpenMonetisDefaults
+import br.com.openmonetis.companion.ui.components.OpenMonetisLogo
+import br.com.openmonetis.companion.ui.theme.success
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToKeywords: () -> Unit,
+    onNavigateToLogs: () -> Unit,
     onDisconnected: () -> Unit,
+    openConnection: Boolean = false,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    var openedConnection by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(openConnection, uiState.isConnected) {
+        if (openConnection && uiState.isConnected && !openedConnection) {
+            openedConnection = true
+            viewModel.showEditServerDialog()
+        }
+    }
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     var pendingAlertPreference by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
@@ -118,15 +150,25 @@ fun SettingsScreen(
     }
 
     // Handle disconnect navigation
-    LaunchedEffect(uiState.isConnected) {
-        if (!uiState.isConnected && uiState.serverUrl.isEmpty()) {
+    LaunchedEffect(uiState.disconnected) {
+        if (uiState.disconnected) {
             onDisconnected()
         }
     }
 
     LaunchedEffect(uiState.exportMessage) {
         uiState.exportMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            val uri = uiState.exportedUri
+            val result = snackbar.showSnackbar(message, if (uri != null) "Compartilhar" else null,
+                withDismissAction = true, duration = SnackbarDuration.Long)
+            if (result == SnackbarResult.ActionPerformed && uri != null) {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(android.content.Intent.EXTRA_STREAM, android.net.Uri.parse(uri))
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Compartilhar notificações"))
+            }
             viewModel.clearExportMessage()
         }
     }
@@ -155,10 +197,10 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = viewModel::hideClearDataDialog,
             title = { Text("Limpar Dados") },
-            text = { Text("Isso irá excluir todas as notificações capturadas localmente. Esta ação não pode ser desfeita.") },
+            text = { Text(uiState.clearDataError ?: "Remover ${uiState.deleteCount} registros deste aparelho, incluindo ${uiState.pendingDeleteCount} pendências? Os lançamentos no servidor permanecem salvos. Esta limpeza não pode ser desfeita. Exporte uma cópia antes de continuar.") },
             confirmButton = {
                 TextButton(onClick = viewModel::clearAllData) {
-                    Text(stringResource(R.string.confirm), color = MaterialTheme.colorScheme.error)
+                    Text("Excluir notificações", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -176,7 +218,7 @@ fun SettingsScreen(
             searchQuery = uiState.appSearchQuery,
             isLoading = uiState.isLoadingApps,
             onSearchQueryChange = viewModel::updateAppSearchQuery,
-            onAppSelected = { app -> viewModel.addApp(app.packageName, app.displayName) },
+            onAppsSelected = viewModel::addApps,
             onDismiss = viewModel::hideAddAppDialog
         )
     }
@@ -184,35 +226,66 @@ fun SettingsScreen(
     // Edit server dialog
     if (uiState.showEditServerDialog) {
         AlertDialog(
-            onDismissRequest = viewModel::hideEditServerDialog,
+            onDismissRequest = {
+                if (!uiState.isSavingServer) viewModel.hideEditServerDialog()
+            },
             title = { Text("Editar Servidor") },
             text = {
                 Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedTextField(
+                        colors = OpenMonetisDefaults.textFieldColors(),
+                        enabled = !uiState.isSavingServer,
                         value = uiState.editServerUrl,
                         onValueChange = viewModel::updateEditServerUrl,
                         label = { Text("URL do Servidor") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        isError = uiState.editServerError != null
                     )
                     OutlinedTextField(
+                        colors = OpenMonetisDefaults.textFieldColors(),
+                        enabled = !uiState.isSavingServer,
                         value = uiState.editToken,
                         onValueChange = viewModel::updateEditToken,
-                        label = { Text("Token de Acesso") },
+                        label = { Text("Novo token (opcional)") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = uiState.editServerError != null
                     )
+                    uiState.editServerError?.let { message ->
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::saveServerSettings) {
-                    Text("Salvar")
+                TextButton(
+                    onClick = viewModel::saveServerSettings,
+                    enabled = !uiState.isSavingServer
+                ) {
+                    if (uiState.isSavingServer) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Salvar")
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::hideEditServerDialog) {
+                TextButton(
+                    onClick = viewModel::hideEditServerDialog,
+                    enabled = !uiState.isSavingServer
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -220,6 +293,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
@@ -238,47 +312,6 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Server Section
-            item {
-                SectionHeader(title = stringResource(R.string.settings_server))
-            }
-
-            item {
-                ServerCard(
-                    serverUrl = uiState.serverUrl,
-                    tokenName = uiState.tokenName,
-                    isConnected = uiState.isConnected,
-                    onEdit = viewModel::showEditServerDialog,
-                    onDisconnect = viewModel::showDisconnectDialog
-                )
-            }
-
-            item {
-                SectionHeader(title = "Alertas do Companion")
-            }
-
-            item {
-                NotificationPreferenceItem(
-                    title = "Confirmar envio com notificação",
-                    subtitle = "Avisa no telefone quando um lançamento for enviado com sucesso",
-                    checked = uiState.notifySyncSuccess,
-                    onCheckedChange = { enabled ->
-                        updateAlertPreference(enabled, viewModel::setNotifySyncSuccess)
-                    }
-                )
-            }
-
-            item {
-                NotificationPreferenceItem(
-                    title = "Avisar erro de envio",
-                    subtitle = "Mostra uma notificação quando houver falha ao enviar um lançamento",
-                    checked = uiState.notifySyncError,
-                    onCheckedChange = { enabled ->
-                        updateAlertPreference(enabled, viewModel::setNotifySyncError)
-                    }
-                )
-            }
-
             // Monitored Apps Section
             item {
                 Row(
@@ -286,7 +319,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SectionHeader(title = stringResource(R.string.settings_monitored_apps))
+                    Text(stringResource(R.string.settings_monitored_apps), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                     OutlinedButton(
                         onClick = viewModel::showAddAppDialog
                     ) {
@@ -327,6 +360,53 @@ fun SettingsScreen(
                 )
             }
 
+            // Server Section
+            item {
+                SectionHeader(title = stringResource(R.string.settings_server))
+            }
+
+            item {
+                ServerCard(
+                    serverUrl = uiState.serverUrl,
+                    tokenName = uiState.tokenName,
+                    isConnected = uiState.isConnected,
+                    lastVerifiedTime = uiState.lastVerifiedTime,
+                    onEdit = viewModel::showEditServerDialog,
+                    onDisconnect = viewModel::showDisconnectDialog
+                )
+            }
+
+            item {
+                SectionHeader(title = "Alertas do Companion")
+            }
+
+            item {
+                NotificationPreferenceItem(
+                    title = "Confirmar envio com notificação",
+                    subtitle = "Avisa no telefone quando um lançamento for enviado com sucesso",
+                    checked = uiState.notifySyncSuccess,
+                    onCheckedChange = { enabled ->
+                        updateAlertPreference(enabled, viewModel::setNotifySyncSuccess)
+                    }
+                )
+            }
+
+            item {
+                NotificationPreferenceItem(
+                    title = "Avisar erro de envio",
+                    subtitle = "Mostra uma notificação quando houver falha ao enviar um lançamento",
+                    checked = uiState.notifySyncError,
+                    onCheckedChange = { enabled ->
+                        updateAlertPreference(enabled, viewModel::setNotifySyncError)
+                    }
+                )
+            }
+
+            item {
+                SectionHeader("Captura e diagnóstico")
+                OutlinedButton(onClick = onNavigateToKeywords, modifier = Modifier.fillMaxWidth()) { Text("Gatilhos de captura") }
+                OutlinedButton(onClick = onNavigateToLogs, modifier = Modifier.fillMaxWidth()) { Text("Logs de diagnóstico") }
+            }
             // Data Section
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -358,7 +438,7 @@ fun SettingsScreen(
                             Icon(
                                 Icons.Default.FileDownload,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Column(modifier = Modifier.weight(1f)) {
@@ -459,6 +539,8 @@ private fun AboutCard(
         Column(
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
+            OpenMonetisLogo(modifier = Modifier.padding(16.dp))
+            HorizontalDivider()
             AboutRow(
                 title = stringResource(R.string.settings_version),
                 value = appVersion
@@ -511,7 +593,7 @@ private fun AboutRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                 contentDescription = "Abrir $title",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.secondary
             )
         }
     }
@@ -552,6 +634,7 @@ private fun NotificationPreferenceItem(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Switch(
+                modifier = Modifier.semantics { contentDescription = title },
                 checked = checked,
                 onCheckedChange = onCheckedChange
             )
@@ -565,9 +648,12 @@ private fun AddAppDialog(
     searchQuery: String,
     isLoading: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    onAppSelected: (InstalledAppUi) -> Unit,
+    onAppsSelected: (Set<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    var selected by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    fun toggle(packageName: String) { selected = if (packageName in selected) selected - packageName else selected + packageName }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -576,7 +662,7 @@ private fun AddAppDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Adicionar App")
+                Text("Selecionar apps")
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Fechar")
                 }
@@ -586,13 +672,16 @@ private fun AddAppDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp)
+                    .heightIn(max = (LocalConfiguration.current.screenHeightDp * 0.55f).dp)
             ) {
                 OutlinedTextField(
+                    colors = OpenMonetisDefaults.textFieldColors(),
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Buscar app...") },
+                    label = { Text("Buscar app") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -607,7 +696,7 @@ private fun AddAppDialog(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
                         }
                     }
                     installedApps.isEmpty() -> {
@@ -630,9 +719,9 @@ private fun AddAppDialog(
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        containerColor = MaterialTheme.colorScheme.surface
                                     ),
-                                    onClick = { onAppSelected(app) }
+                                    onClick = { toggle(app.packageName) }
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -641,6 +730,7 @@ private fun AddAppDialog(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
+                                        Checkbox(checked = app.packageName in selected, onCheckedChange = { toggle(app.packageName) })
                                         app.icon?.let { icon ->
                                             Image(
                                                 painter = rememberDrawablePainter(drawable = icon),
@@ -655,7 +745,7 @@ private fun AddAppDialog(
                                                 text = app.displayName,
                                                 style = MaterialTheme.typography.bodyMedium
                                             )
-                                            Text(
+                                            if (installedApps.count { it.displayName == app.displayName } > 1) Text(
                                                 text = app.packageName,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -669,7 +759,8 @@ private fun AddAppDialog(
                 }
             }
         },
-        confirmButton = {}
+        confirmButton = { TextButton(onClick = { onAppsSelected(selected.toSet()) }, enabled = selected.isNotEmpty()) { Text("Monitorar ${selected.size} " + if (selected.size == 1) "app" else "apps") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
 
@@ -679,7 +770,7 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.secondary,
         modifier = Modifier.padding(vertical = 8.dp)
     )
 }
@@ -689,6 +780,7 @@ private fun ServerCard(
     serverUrl: String,
     tokenName: String,
     isConnected: Boolean,
+    lastVerifiedTime: Long,
     onEdit: () -> Unit,
     onDisconnect: () -> Unit
 ) {
@@ -714,14 +806,14 @@ private fun ServerCard(
                         imageVector = if (isConnected) Icons.Default.CheckCircle else Icons.Default.Error,
                         contentDescription = null,
                         tint = if (isConnected) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.success
                         } else {
                             MaterialTheme.colorScheme.error
                         }
                     )
                     Text(
                         text = if (isConnected) {
-                            stringResource(R.string.settings_server_connected)
+                            "Configurado"
                         } else {
                             stringResource(R.string.settings_server_disconnected)
                         },
@@ -732,8 +824,8 @@ private fun ServerCard(
                     IconButton(onClick = onEdit) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "Editar",
-                            tint = MaterialTheme.colorScheme.primary
+                            contentDescription = "Editar servidor e token",
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                     if (isConnected) {
@@ -748,6 +840,7 @@ private fun ServerCard(
                 }
             }
 
+            Text("Última verificação: " + if (lastVerifiedTime > 0) br.com.openmonetis.companion.ui.notifications.formatDate(lastVerifiedTime) else "não registrada", style = MaterialTheme.typography.bodySmall)
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
             Text(
@@ -813,16 +906,17 @@ private fun AppToggleItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Switch(
+                    modifier = Modifier.semantics { contentDescription = "Monitorar ${app.displayName}" },
                     checked = app.isEnabled,
                     onCheckedChange = onToggle
                 )
                 IconButton(
                     onClick = onRemove,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Remover",
+                        contentDescription = "Remover monitoramento de ${app.displayName}",
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(18.dp)
                     )

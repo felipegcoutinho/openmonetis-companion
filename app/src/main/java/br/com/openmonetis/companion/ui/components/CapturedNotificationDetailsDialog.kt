@@ -11,15 +11,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import br.com.openmonetis.companion.ui.components.OpenMonetisOutlinedButton as OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import br.com.openmonetis.companion.ui.components.OpenMonetisTextButton as TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import br.com.openmonetis.companion.data.local.entities.SyncStatus
-import br.com.openmonetis.companion.ui.theme.Success
+import br.com.openmonetis.companion.ui.theme.success
+import br.com.openmonetis.companion.ui.notifications.userLabel
 
 data class CapturedNotificationDetails(
     val appName: String,
@@ -38,7 +39,8 @@ fun CapturedNotificationDetailsDialog(
     onDismiss: () -> Unit,
     onCopyOriginalText: () -> Unit,
     onRetry: (() -> Unit)?,
-    onDiscard: (() -> Unit)?
+    onDiscard: (() -> Unit)?,
+    retryLabel: String = "Reenviar"
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -48,7 +50,7 @@ fun CapturedNotificationDetailsDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                DetailItem("Status", notification.syncStatus.toUserLabel(), notification.syncStatus.toUserColor())
+                DetailItem("Status", notification.syncStatus.userLabel(), notification.syncStatus.toUserColor())
                 DetailItem("App", notification.appName)
                 DetailItem("Data", notification.timestampFull)
                 notification.parsedName?.let { DetailItem("Estabelecimento", it) }
@@ -59,22 +61,22 @@ fun CapturedNotificationDetailsDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
                         onClick = onCopyOriginalText,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Copiar texto")
                     }
                     if (onRetry != null) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         OutlinedButton(
                             onClick = onRetry,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Reenviar")
+                            Text(retryLabel)
                         }
                     }
                 }
@@ -118,21 +120,11 @@ private fun DetailItem(
     }
 }
 
-private fun SyncStatus.toUserLabel(): String {
-    return when (this) {
-        SyncStatus.SYNCED, SyncStatus.PROCESSED -> "Enviado"
-        SyncStatus.SYNC_FAILED -> "Pendente com erro"
-        SyncStatus.SYNCING -> "Enviando"
-        SyncStatus.DISCARDED -> "Descartado"
-        SyncStatus.PENDING_SYNC -> "Pendente"
-    }
-}
-
 @Composable
 private fun SyncStatus.toUserColor() = when (this) {
-    SyncStatus.SYNCED, SyncStatus.PROCESSED -> Success
+    SyncStatus.SYNCED, SyncStatus.PROCESSED -> MaterialTheme.colorScheme.success
     SyncStatus.SYNC_FAILED -> MaterialTheme.colorScheme.error
-    SyncStatus.SYNCING -> MaterialTheme.colorScheme.primary
+    SyncStatus.SYNCING -> MaterialTheme.colorScheme.secondary
     SyncStatus.DISCARDED -> MaterialTheme.colorScheme.onSurfaceVariant
     SyncStatus.PENDING_SYNC -> MaterialTheme.colorScheme.onSurface
 }

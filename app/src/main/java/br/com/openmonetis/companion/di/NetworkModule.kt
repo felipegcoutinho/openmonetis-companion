@@ -1,5 +1,6 @@
 package br.com.openmonetis.companion.di
 
+import br.com.openmonetis.companion.BuildConfig
 import br.com.openmonetis.companion.data.remote.OpenMonetisApi
 import br.com.openmonetis.companion.data.remote.interceptors.AuthInterceptor
 import br.com.openmonetis.companion.data.remote.interceptors.DynamicUrlInterceptor
@@ -23,7 +24,13 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            redactHeader("Authorization")
+            redactHeader("Cookie")
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BASIC
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
     }
 

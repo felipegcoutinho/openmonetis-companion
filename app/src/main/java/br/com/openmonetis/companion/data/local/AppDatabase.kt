@@ -18,10 +18,18 @@ import br.com.openmonetis.companion.data.local.entities.SyncLogEntity
         KeywordsSettingsEntity::class,
         SyncLogEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
+    companion object {
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Legacy rows keep an unknown send time; never invent historical timestamps.
+                db.execSQL("ALTER TABLE notifications ADD COLUMN synced_at INTEGER")
+            }
+        }
+    }
     abstract fun notificationDao(): NotificationDao
     abstract fun appConfigDao(): AppConfigDao
     abstract fun keywordsSettingsDao(): KeywordsSettingsDao

@@ -46,6 +46,9 @@ data class NotificationEntity(
     @ColumnInfo(name = "sync_error")
     val syncError: String? = null,
 
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -32,10 +32,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import br.com.openmonetis.companion.ui.components.OpenMonetisTextButton as TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.openmonetis.companion.R
+import br.com.openmonetis.companion.ui.components.OpenMonetisDefaults
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -51,7 +52,7 @@ fun KeywordsSettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: KeywordsSettingsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -83,7 +84,7 @@ fun KeywordsSettingsScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.tertiary)
             }
         } else {
             Column(
@@ -165,7 +166,7 @@ private fun KeywordSection(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -178,7 +179,7 @@ private fun KeywordSection(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = stringResource(R.string.settings_keywords_add),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -213,11 +214,11 @@ private fun KeywordChip(
         trailingIcon = {
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.delete),
+                    contentDescription = "Remover gatilho $keyword",
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -241,6 +242,7 @@ private fun AddKeywordDialog(
         title = { Text(title) },
         text = {
             OutlinedTextField(
+                colors = OpenMonetisDefaults.textFieldColors(),
                 value = keyword,
                 onValueChange = onKeywordChange,
                 label = { Text(stringResource(R.string.settings_keywords_term)) },

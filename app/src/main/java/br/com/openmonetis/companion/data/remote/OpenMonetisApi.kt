@@ -5,12 +5,10 @@ import br.com.openmonetis.companion.data.remote.dto.InboxBatchRequest
 import br.com.openmonetis.companion.data.remote.dto.InboxBatchResponse
 import br.com.openmonetis.companion.data.remote.dto.InboxRequest
 import br.com.openmonetis.companion.data.remote.dto.InboxResponse
-import br.com.openmonetis.companion.data.remote.dto.RefreshTokenResponse
 import br.com.openmonetis.companion.data.remote.dto.VerifyTokenResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface OpenMonetisApi {
@@ -20,11 +18,6 @@ interface OpenMonetisApi {
 
     @POST("api/auth/device/verify")
     suspend fun verifyToken(): Response<VerifyTokenResponse>
-
-    @POST("api/auth/device/refresh")
-    suspend fun refreshToken(
-        @Header("Authorization") refreshToken: String
-    ): Response<RefreshTokenResponse>
 
     @POST("api/inbox")
     suspend fun submitNotification(

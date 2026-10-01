@@ -14,16 +14,8 @@ data class HealthResponse(
 // Token Verification
 data class VerifyTokenResponse(
     val valid: Boolean,
-    val userId: String?,
     val tokenId: String?,
     val tokenName: String?,
-    val expiresAt: String?,
-    val error: String?
-)
-
-// Token Refresh
-data class RefreshTokenResponse(
-    val accessToken: String?,
     val expiresAt: String?,
     val error: String?
 )

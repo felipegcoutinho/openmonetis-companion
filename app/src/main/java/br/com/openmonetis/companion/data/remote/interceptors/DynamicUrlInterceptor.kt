@@ -1,9 +1,10 @@
 package br.com.openmonetis.companion.data.remote.interceptors
 
 import br.com.openmonetis.companion.util.SecureStorage
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import br.com.openmonetis.companion.util.ServerUrlPolicy
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.io.IOException
 import javax.inject.Inject
 
 /**
@@ -17,15 +18,8 @@ class DynamicUrlInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
 
-        val serverUrl = secureStorage.serverUrl
-        if (serverUrl.isNullOrBlank()) {
-            // No server configured, proceed with original request
-            // This will likely fail, but allows health check during setup
-            return chain.proceed(originalRequest)
-        }
-
-        val serverHttpUrl = serverUrl.toHttpUrlOrNull()
-            ?: return chain.proceed(originalRequest)
+        val serverHttpUrl = ServerUrlPolicy.parseStored(secureStorage.serverUrl)
+            ?: throw IOException("OpenMonetis server URL is not configured securely")
 
         val newUrl = originalRequest.url.newBuilder()
             .scheme(serverHttpUrl.scheme)

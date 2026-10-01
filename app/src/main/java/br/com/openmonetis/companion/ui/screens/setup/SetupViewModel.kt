@@ -2,14 +2,16 @@ package br.com.openmonetis.companion.ui.screens.setup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.openmonetis.companion.data.remote.DeviceConnectionVerifier
 import br.com.openmonetis.companion.data.remote.OpenMonetisApi
+import br.com.openmonetis.companion.util.CompanionQrCode
 import br.com.openmonetis.companion.util.SecureStorage
+import br.com.openmonetis.companion.util.ServerUrlPolicy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import javax.inject.Inject
 
 data class SetupUiState(
@@ -30,30 +32,32 @@ enum class SetupStep {
 @HiltViewModel
 class SetupViewModel @Inject constructor(
     private val secureStorage: SecureStorage,
-    private val api: OpenMonetisApi
+    private val connectionVerifier: DeviceConnectionVerifier,
+    private val savedState: androidx.lifecycle.SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SetupUiState())
+    private val _uiState = MutableStateFlow(SetupUiState(serverUrl = savedState["serverUrl"] ?: ""))
     val uiState: StateFlow<SetupUiState> = _uiState.asStateFlow()
 
     private val _isConfigured = MutableStateFlow(secureStorage.isConfigured())
     val isConfigured: StateFlow<Boolean> = _isConfigured.asStateFlow()
 
     fun updateServerUrl(url: String) {
+        if (_uiState.value.isLoading) return
+        savedState["serverUrl"] = url
         _uiState.value = _uiState.value.copy(serverUrl = url, error = null)
     }
 
     fun updateToken(token: String) {
+        if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(token = token, error = null)
     }
 
     fun verifyServerConnection() {
-        val url = _uiState.value.serverUrl.trim()
-
-        // Validate URL format
-        val httpUrl = url.toHttpUrlOrNull()
-        if (httpUrl == null) {
-            _uiState.value = _uiState.value.copy(error = "URL inválida")
+        if (_uiState.value.isLoading) return
+        val url = ServerUrlPolicy.normalize(_uiState.value.serverUrl)
+        if (url == null) {
+            _uiState.value = _uiState.value.copy(error = "Use uma URL HTTPS válida")
             return
         }
 
@@ -61,41 +65,44 @@ class SetupViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                // Temporarily set the server URL for the API call
-                secureStorage.serverUrl = url
-
-                val response = api.healthCheck()
+                val response = connectionVerifier.healthCheck(ServerUrlPolicy.parse(url)!!)
 
                 if (response.isSuccessful && response.body()?.status == "ok") {
                     val body = response.body()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         step = SetupStep.TOKEN,
+                        serverUrl = url,
                         serverName = body?.name,
                         serverVersion = body?.version
                     )
                 } else {
-                    secureStorage.serverUrl = null
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.body()?.message ?: "Servidor não disponível"
+                        error = "Servidor não disponível"
                     )
                 }
-            } catch (e: Exception) {
-                secureStorage.serverUrl = null
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Não foi possível conectar: ${e.message}"
+                    error = "Não foi possível conectar ao servidor"
                 )
             }
         }
     }
 
     fun verifyToken() {
-        val token = _uiState.value.token.trim()
-
-        if (token.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "Token não pode estar vazio")
+        if (_uiState.value.isLoading) return
+        val token = CompanionQrCode.extractToken(_uiState.value.token)
+        val serverOrigin = ServerUrlPolicy.parse(_uiState.value.serverUrl)
+        if (token == null) {
+            _uiState.value = _uiState.value.copy(error = "Informe um token válido")
+            return
+        }
+        if (serverOrigin == null) {
+            _uiState.value = _uiState.value.copy(error = "Configure novamente o servidor")
             return
         }
 
@@ -103,44 +110,46 @@ class SetupViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                // Temporarily set the token for verification
-                secureStorage.accessToken = token
-
-                val response = api.verifyToken()
-
-                if (response.isSuccessful && response.body()?.valid == true) {
-                    val body = response.body()
-
-                    // Save credentials permanently
+                val verified = connectionVerifier.verify(serverOrigin, token)
+                if (verified != null) {
                     secureStorage.saveCredentials(
                         serverUrl = _uiState.value.serverUrl,
                         accessToken = token,
-                        refreshToken = null, // Will be set if we implement refresh
-                        tokenId = body?.tokenId,
-                        tokenName = body?.tokenName
+                        tokenId = verified.tokenId,
+                        tokenName = verified.tokenName
                     )
 
                     _uiState.value = _uiState.value.copy(isLoading = false)
                     _isConfigured.value = true
                 } else {
-                    secureStorage.accessToken = null
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = response.body()?.error ?: "Token inválido"
+                        error = "Token inválido ou expirado"
                     )
                 }
-            } catch (e: Exception) {
-                secureStorage.accessToken = null
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Erro ao validar token: ${e.message}"
+                    error = "Não foi possível acessar o servidor. Verifique a conexão e tente novamente."
                 )
             }
         }
     }
 
+    fun updateTokenFromQrCode(payload: String): Boolean {
+        val token = CompanionQrCode.extractToken(payload)
+        if (token == null) {
+            _uiState.value = _uiState.value.copy(error = "QR Code inválido")
+            return false
+        }
+        _uiState.value = _uiState.value.copy(token = token, error = null)
+        return true
+    }
+
     fun goBackToServerStep() {
-        secureStorage.serverUrl = null
+        if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(
             step = SetupStep.SERVER_URL,
             error = null
