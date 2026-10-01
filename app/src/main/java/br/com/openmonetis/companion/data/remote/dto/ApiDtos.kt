@@ -29,7 +29,9 @@ data class InboxRequest(
     val notificationTimestamp: String,
     val parsedName: String?,
     val parsedAmount: Double?,
-    val clientId: String?
+    val clientId: String?,
+    // UTC timestamps must opt out of the API's legacy Brazil wall-clock correction.
+    val timestampFormatVersion: Int = 2
 )
 
 // Inbox Response

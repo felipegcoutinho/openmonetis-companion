@@ -21,6 +21,7 @@ import br.com.openmonetis.companion.data.remote.OpenMonetisApi
 import br.com.openmonetis.companion.data.remote.dto.InboxBatchRequest
 import br.com.openmonetis.companion.data.remote.dto.InboxRequest
 import br.com.openmonetis.companion.util.SecureStorage
+import br.com.openmonetis.companion.util.SyncFailureMessages
 import br.com.openmonetis.companion.util.SyncResultNotifier
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -79,8 +80,10 @@ class SyncWorker @AssistedInject constructor(
                             syncResultNotifier.notifySuccess(notification)
                             sent++
                         } else {
-                            notificationDao.markSyncFailed(notification.id, ITEM_SYNC_ERROR)
-                            syncResultNotifier.notifyError(notification, ITEM_SYNC_ERROR)
+                            val error = SyncFailureMessages.forItem(result?.error)
+                            notificationDao.markSyncFailed(notification.id, error)
+                            syncResultNotifier.notifyError(notification, error)
+                            log(SyncLogType.ERROR, error)
                             failed++
                         }
                     }
@@ -143,7 +146,6 @@ class SyncWorker @AssistedInject constructor(
         private const val LOG_RETENTION_DAYS = 7L
         private const val NOTIFICATION_RETENTION_DAYS = 30L
         private const val DAY_IN_MILLISECONDS = 24L * 60L * 60L * 1_000L
-        private const val ITEM_SYNC_ERROR = "Falha ao enviar lançamento"
         private const val TOKEN_SYNC_ERROR = "Token inválido ou expirado"
         private const val TEMPORARY_SYNC_ERROR = "Falha temporária de comunicação"
 

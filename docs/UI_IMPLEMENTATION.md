@@ -29,6 +29,14 @@ Nenhum emulador foi iniciado e nenhum teste instrumentado foi executado no apare
 
 ## Dados e sincronização
 
+### Correção do protocolo na 1.6.1
+
+A versão 1.6.0 passou a enviar horários em UTC, mas não declarou `timestampFormatVersion: 2`. A API do OpenMonetis interpreta a ausência desse campo como o formato legado do Companion até 1.5.2 e aplica a correção de três horas. Uma notificação recente pode então parecer futura e ser rejeitada com `inbox_notification_timestamp_invalid`.
+
+A 1.6.1 (código 11) inclui o campo no JSON de envio. Rejeições conhecidas de horário e conflito de identificador recebem mensagens específicas; textos arbitrários do servidor continuam sem ser registrados ou exibidos. O problema foi reproduzido no serviço local da API com dados fictícios: sem o campo houve rejeição; com a versão 2 a mesma notificação foi aceita.
+
+A correção passou em 17 testes unitários por variante, lint sem erros e build release com R8. Nenhum emulador foi iniciado nem dados do aparelho foram substituídos para esses testes. A atualização oficial usa a mesma assinatura da 1.6.0 e mantém o banco e o pareamento existentes.
+
 A migração Room 1→2 acrescenta `synced_at` sem apagar ou recriar tabelas. Registros legados permanecem com data de envio desconhecida, excluídos de “Enviados hoje”. Novos envios registram a hora efetiva e são retidos por 30 dias a partir dela. Processados e descartados sem data de envio continuam usando a captura para retenção.
 
 Pedidos de sincronização são serializados com `APPEND_OR_REPLACE`; capturas durante um envio não cancelam o worker ativo. O worker percorre lotes de 50 com cursor estável e corte temporal, resolve resultados omitidos como falhas, separa erros de autenticação de falhas temporárias e propaga cancelamento. A aquisição de cada registro é condicional e atômica, impedindo envio de registros removidos ou descartados antes da aquisição.

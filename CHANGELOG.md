@@ -7,6 +7,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Não lançado]
 
+## [1.6.1] - 2026-09-30
+
+### Corrigido
+
+- Envio declara `timestampFormatVersion: 2` para que a API interprete o horário UTC sem aplicar a correção legada de três horas.
+- Rejeições por horário inválido e conflito de identificador mostram mensagens específicas; conteúdo arbitrário retornado pelo servidor continua fora dos logs e da interface.
+
 ## [1.6.0] - 2026-09-30
 
 ### Adicionado
